@@ -194,92 +194,91 @@ public class MenuController {
             return ResponseEntity.internalServerError().build();
         }
     }
-}
 
-   /* // 메뉴 수정 (이미지 포함)
-    @PutMapping("/{userId}/settings/menu_info/id/{userMenuId}")
-    @Operation(summary = "메뉴 수정", description = "메뉴 정보와 이미지를 수정합니다.")
-    public ResponseEntity<MenuResponse> updateMenu(
-            @PathVariable Long userId,
-            @PathVariable Integer userMenuId,
-            @RequestParam("nameKo") String nameKo,
-            @RequestParam("description") String description,
-            @RequestParam("price") BigDecimal price,
-            @RequestParam(value = "image", required = false) MultipartFile image) {
-        try {
-            MenuRequest request = MenuRequest.builder()
-                    .menuName(nameKo)
-                    .menuDescription(description)
-                    .menuPrice(price)
-                    .build();
-            
-            MenuResponse updatedMenu = menuService.updateMenuWithImage(userId, userMenuId, request, image);
-            return ResponseEntity.ok(updatedMenu);
-        } catch (IllegalArgumentException e) {
-            log.warn("잘못된 요청: {}", e.getMessage());
-            return ResponseEntity.badRequest().build();
-        } catch (RuntimeException e) {
-            log.warn("메뉴 수정 실패: {}", e.getMessage());
-            return ResponseEntity.notFound().build();
-        } catch (Exception e) {
-            log.error("메뉴 수정 중 오류 발생: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError().build();
-        }
-    }
+     // 메뉴 수정 (이미지 포함)
+     @PutMapping("/{userId}/settings/menu_info/id/{userMenuId}")
+     @Operation(summary = "메뉴 수정", description = "메뉴 정보와 이미지를 수정합니다.")
+     public ResponseEntity<MenuResponse> updateMenu(
+             @PathVariable Long userId,
+             @PathVariable Integer userMenuId,
+             @RequestParam("nameKo") String nameKo,
+             @RequestParam("description") String description,
+             @RequestParam("price") BigDecimal price,
+             @RequestParam(value = "image", required = false) MultipartFile image) {
+         try {
+             MenuRequest request = MenuRequest.builder()
+                     .menuName(nameKo)
+                     .menuDescription(description)
+                     .menuPrice(price)
+                     .build();
 
-    // 메뉴 삭제 (이미지 포함)
-    @DeleteMapping("/{userId}/settings/menu_info/id/{userMenuId}")
-    @Operation(summary = "메뉴 삭제", description = "메뉴와 관련 이미지를 삭제합니다.")
-    public ResponseEntity<Void> deleteMenu(
-            @PathVariable Long userId,
-            @PathVariable Integer userMenuId) {
-        try {
-            menuService.deleteMenuWithImage(userId, userMenuId);
-            return ResponseEntity.noContent().build();
-        } catch (RuntimeException e) {
-            log.warn("메뉴 삭제 실패: {}", e.getMessage());
-            return ResponseEntity.notFound().build();
-        } catch (Exception e) {
-            log.error("메뉴 삭제 중 오류 발생: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError().build();
-        }
-    }
+             MenuResponse updatedMenu = menuService.updateMenuWithImage(userId, userMenuId, request, image);
+             return ResponseEntity.ok(updatedMenu);
+         } catch (IllegalArgumentException e) {
+             log.warn("잘못된 요청: {}", e.getMessage());
+             return ResponseEntity.badRequest().build();
+         } catch (RuntimeException e) {
+             log.warn("메뉴 수정 실패: {}", e.getMessage());
+             return ResponseEntity.notFound().build();
+         } catch (Exception e) {
+             log.error("메뉴 수정 중 오류 발생: {}", e.getMessage(), e);
+             return ResponseEntity.internalServerError().build();
+         }
+     }
 
-    // 언어별 메뉴 + 식당 정보 조회
-    @GetMapping("/{userId}/settings/menu_info/lang/{langCode}")
-    @Operation(summary = "언어별 메뉴 조회", description = "지정된 언어로 번역된 메뉴와 식당 정보를 조회합니다.")
-    public ResponseEntity<MenuWithRestaurantResponse> getMenuByLanguage(
-            @PathVariable Long userId,
-            @PathVariable String langCode) {
+     // 메뉴 삭제 (이미지 포함)
+     @DeleteMapping("/{userId}/settings/menu_info/id/{userMenuId}")
+     @Operation(summary = "메뉴 삭제", description = "메뉴와 관련 이미지를 삭제합니다.")
+     public ResponseEntity<Void> deleteMenu(
+             @PathVariable Long userId,
+             @PathVariable Integer userMenuId) {
+         try {
+             menuService.deleteMenuWithImage(userId, userMenuId);
+             return ResponseEntity.noContent().build();
+         } catch (RuntimeException e) {
+             log.warn("메뉴 삭제 실패: {}", e.getMessage());
+             return ResponseEntity.notFound().build();
+         } catch (Exception e) {
+             log.error("메뉴 삭제 중 오류 발생: {}", e.getMessage(), e);
+             return ResponseEntity.internalServerError().build();
+         }
+     }
 
-        try {
-            // 1. 식당 정보 조회
-            RestaurantInfo restaurantInfo = storeService.getRestaurantInfoByUserId(userId);
+     // 언어별 메뉴 + 식당 정보 조회
+     @GetMapping("/{userId}/settings/menu_info/lang/{langCode}")
+     @Operation(summary = "언어별 메뉴 조회", description = "지정된 언어로 번역된 메뉴와 식당 정보를 조회합니다.")
+     public ResponseEntity<MenuWithRestaurantResponse> getMenuByLanguage(
+             @PathVariable Long userId,
+             @PathVariable String langCode) {
 
-            // 2. 메뉴 정보 조회 (언어별)
-            List<MenuInfo> menuList = menuService.getMenuInfoByLanguage(userId, langCode);
+         try {
+             // 1. 식당 정보 조회
+             RestaurantInfo restaurantInfo = storeService.getRestaurantInfoByUserId(userId);
 
-            // 3. RestaurantInfo를 RestaurantInfoResponse로 변환 (언어별 번역 포함)
-            RestaurantInfoResponse restaurantInfoResponse = createTranslatedRestaurantInfo(restaurantInfo, langCode);
+             // 2. 메뉴 정보 조회 (언어별)
+             List<MenuInfo> menuList = menuService.getMenuInfoByLanguage(userId, langCode);
 
-            // 4. DTO로 묶어서 반환
-            MenuWithRestaurantResponse response = new MenuWithRestaurantResponse(restaurantInfoResponse, menuList);
+             // 3. RestaurantInfo를 RestaurantInfoResponse로 변환 (언어별 번역 포함)
+             RestaurantInfoResponse restaurantInfoResponse = createTranslatedRestaurantInfo(restaurantInfo, langCode);
 
-            return ResponseEntity.ok(response);
+             // 4. DTO로 묶어서 반환
+             MenuWithRestaurantResponse response = new MenuWithRestaurantResponse(restaurantInfoResponse, menuList);
 
-        } catch (IllegalArgumentException e) {
-            log.warn("잘못된 언어 코드: {}", e.getMessage());
-            return ResponseEntity.badRequest().build();
+             return ResponseEntity.ok(response);
 
-        } catch (Exception e) {
-            log.error("언어별 메뉴 조회 중 오류 발생: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError().build();
-        }
-    }
+         } catch (IllegalArgumentException e) {
+             log.warn("잘못된 언어 코드: {}", e.getMessage());
+             return ResponseEntity.badRequest().build();
 
-    /**
-     * 식당 정보를 요청된 언어로 번역하여 RestaurantInfoResponse 생성
-     */
+         } catch (Exception e) {
+             log.error("언어별 메뉴 조회 중 오류 발생: {}", e.getMessage(), e);
+             return ResponseEntity.internalServerError().build();
+         }
+     }
+
+     /**
+      * 식당 정보를 요청된 언어로 번역하여 RestaurantInfoResponse 생성
+      */
     private RestaurantInfoResponse createTranslatedRestaurantInfo(RestaurantInfo restaurantInfo, String langCode) {
         String restaurantName = restaurantInfo.getRestaurantName();
         String restaurantAddress = restaurantInfo.getRestaurantAddress();
@@ -352,4 +351,3 @@ public class MenuController {
         };
     }
 }
-*/

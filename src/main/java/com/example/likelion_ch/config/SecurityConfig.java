@@ -2,7 +2,6 @@ package com.example.likelion_ch.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -14,18 +13,19 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf.disable()) // CSRF 비활성화
                 .authorizeHttpRequests(auth -> auth
-
-                        // 회원가입, 로그인 경로에 대한 모든 요청 허용
-                        .requestMatchers("/api/user/register/**", "/api/user/login", "/api/store/**", "/api/cart/**","/api/order-ratings/**","/api/orders/**").permitAll()
-                        .requestMatchers("/api/orders/current").authenticated()
+                        // 공개 API
+                        .requestMatchers("/api/user/register/**", "/api/user/login", "/api/store/**", "/api/cart/**", "/api/order-ratings/**","/api/orders/**").permitAll()
+                        .requestMatchers("/", "/public/**").permitAll()
                         .requestMatchers(HttpMethod.PATCH, "/api/store/**").permitAll()
+                        // 인증이 필요한 API
+                        .requestMatchers("/api/orders/current").authenticated()
                         .anyRequest().authenticated()
-
                 )
-                .formLogin(form -> form.disable()) // 기본 HTML 로그인 폼 비활성화
-                .httpBasic(httpBasic -> httpBasic.disable()); // HTTP Basic도 비활성화
+                .formLogin(form -> form.disable())  // HTML 로그인 폼 비활성화
+                .httpBasic(httpBasic -> httpBasic.disable()); // HTTP Basic 비활성화
+
         return http.build();
     }
 

@@ -2,6 +2,7 @@ env
 .env
 .cursor
 application.yml
+src/test/resources/application-test.yml
 HELP.md
 .gradle
 build/
