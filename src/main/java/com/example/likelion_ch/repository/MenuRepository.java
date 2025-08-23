@@ -15,7 +15,7 @@ import java.util.Optional;
 public interface MenuRepository extends JpaRepository<Menu, Long> {
 
     List<Menu> findByUser(SiteUser user);
-
+    List<Menu> findByIdIn(List<Long> ids);
     Optional<Menu> findByIdAndUserId(Long menuId, Long userId);
 
     @Query("SELECT m FROM Menu m WHERE m.user.id = :userId " +
