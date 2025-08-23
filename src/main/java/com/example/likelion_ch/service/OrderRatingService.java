@@ -1,5 +1,6 @@
 package com.example.likelion_ch.service;
 
+import com.example.likelion_ch.dto.OrderRatingResponse;
 import com.example.likelion_ch.entity.Order;
 import com.example.likelion_ch.entity.OrderRating;
 import com.example.likelion_ch.repository.OrderRatingRepository;
@@ -12,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -24,8 +26,7 @@ public class OrderRatingService {
      * 손님이 별점 저장
      */
     @Transactional
-    public OrderRating saveRating(Long orderId, int star) {
-        // 트랜잭션 안에서 Order와 User Lazy 로딩 가능
+    public OrderRatingResponse saveRating(Long orderId, int star) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found"));
 
@@ -35,26 +36,32 @@ public class OrderRatingService {
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        return ratingRepository.save(rating);
+        ratingRepository.save(rating);
+
+        return new OrderRatingResponse(
+                rating.getId(),
+                rating.getStar(),
+                rating.getCreatedAt(),
+                order.getId()
+        );
     }
 
     /**
      * 사장님: 최근 N개의 별점 조회
-     * Lazy 로딩 User 정보 포함
      */
     @Transactional(readOnly = true)
-    public List<OrderRating> getRecentRatings(int limit) {
+    public List<OrderRatingResponse> getRecentRatings(int limit) {
         List<OrderRating> ratings = ratingRepository.findAllByOrderByCreatedAtDesc(
                 PageRequest.of(0, limit, Sort.by("createdAt").descending())
         );
 
-        // Lazy 로딩된 User 정보 초기화
-        ratings.forEach(r -> {
-            if (r.getOrder() != null && r.getOrder().getUser() != null) {
-                r.getOrder().getUser().getId(); // User 엔티티 강제 초기화
-            }
-        });
-
-        return ratings;
+        return ratings.stream()
+                .map(r -> new OrderRatingResponse(
+                        r.getId(),
+                        r.getStar(),
+                        r.getCreatedAt(),
+                        r.getOrder() != null ? r.getOrder().getId() : null
+                ))
+                .collect(Collectors.toList());
     }
 }

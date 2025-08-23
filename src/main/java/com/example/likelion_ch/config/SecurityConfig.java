@@ -15,9 +15,10 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable()) // CSRF 비활성화
                 .authorizeHttpRequests(auth -> auth
-                        // 공개 API
-                        .requestMatchers("/api/user/register/**", "/api/user/login", "/api/store/**", "/api/cart/**", "/api/order-ratings/**","/api/orders/**").permitAll()
                         .requestMatchers("/", "/public/**").permitAll()
+                        // 회원가입, 로그인 경로에 대한 모든 요청 허용
+                        .requestMatchers("/api/user/register/**", "/api/user/login", "/api/store/**", "/api/cart/**","/api/order-ratings/**","/api/orders/**","/api/statistics/**").permitAll()
+                        .requestMatchers("/api/orders/current").authenticated()
                         .requestMatchers(HttpMethod.PATCH, "/api/store/**").permitAll()
                         // 인증이 필요한 API
                         .requestMatchers("/api/orders/current").authenticated()
