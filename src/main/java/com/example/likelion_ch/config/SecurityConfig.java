@@ -17,7 +17,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         // 회원가입, 로그인 경로에 대한 모든 요청 허용
-                        .requestMatchers("/api/user/register/**", "/api/user/login", "/api/store/**", "/api/cart/**","/api/order-ratings/**","/api/orders/**").permitAll()
+                        .requestMatchers("/api/user/register/**", "/api/user/login", "/api/store/**", "/api/cart/**","/api/order-ratings/**","/api/orders/**","/api/statistics/**").permitAll()
                         .requestMatchers("/api/orders/current").authenticated()
                         .requestMatchers(HttpMethod.PATCH, "/api/store/**").permitAll()
                         .anyRequest().authenticated()

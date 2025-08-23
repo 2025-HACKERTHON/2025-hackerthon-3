@@ -28,8 +28,6 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import com.example.likelion_ch.dto.MenuWithRestaurantResponse;
-import com.example.likelion_ch.service.GeminiTranslationService;
 
 @Slf4j
 @RestController
@@ -40,7 +38,6 @@ public class MenuController {
 
     private final MenuService menuService;
     private final StoreService storeService;
-    private final GeminiTranslationService translationService;
 
     // 언어별 메뉴 조회 (이미 번역됨)
     @GetMapping("/{userId}/settings/menu_info/{langCode}")
@@ -85,24 +82,13 @@ public class MenuController {
 
     // 메뉴 등록
     @PostMapping("/{userId}/settings/menu_info")
-    @Operation(summary = "메뉴 등록", description = "새로운 메뉴를 등록합니다. (이미지 포함 가능)")
+    @Operation(summary = "메뉴 등록", description = "새로운 메뉴를 등록합니다.")
     public ResponseEntity<MenuResponse> createMenu(
             @PathVariable Long userId,
-            @RequestParam("nameKo") String nameKo,
-            @RequestParam("description") String description,
-            @RequestParam("price") BigDecimal price,
-            @RequestParam(value = "image", required = false) MultipartFile image) {
-
+            @Valid @RequestBody MenuRequest request) {
         try {
-            MenuRequest request = MenuRequest.builder()
-                    .menuName(nameKo)
-                    .menuDescription(description)
-                    .menuPrice(price)
-                    .build();
-
-            MenuResponse menu = menuService.createMenuWithImage(userId, request, image);
+            MenuResponse menu = menuService.createMenu(userId, request);
             return ResponseEntity.ok(menu);
-
         } catch (RuntimeException e) {
             log.warn("메뉴 등록 실패: {}", e.getMessage());
             return ResponseEntity.badRequest().build();
@@ -111,7 +97,6 @@ public class MenuController {
             return ResponseEntity.internalServerError().build();
         }
     }
-
 
     // 베스트 메뉴 TOP3
     @GetMapping("/{userId}/top3")
@@ -212,7 +197,7 @@ public class MenuController {
                     .menuDescription(description)
                     .menuPrice(price)
                     .build();
-            
+
             MenuResponse updatedMenu = menuService.updateMenuWithImage(userId, userMenuId, request, image);
             return ResponseEntity.ok(updatedMenu);
         } catch (IllegalArgumentException e) {
@@ -245,111 +230,22 @@ public class MenuController {
         }
     }
 
-    // 언어별 메뉴 + 식당 정보 조회
+    // 언어별 메뉴 조회
     @GetMapping("/{userId}/settings/menu_info/lang/{langCode}")
-    @Operation(summary = "언어별 메뉴 조회", description = "지정된 언어로 번역된 메뉴와 식당 정보를 조회합니다.")
-    public ResponseEntity<MenuWithRestaurantResponse> getMenuByLanguage(
+    @Operation(summary = "언어별 메뉴 조회", description = "지정된 언어로 번역된 메뉴를 조회합니다.")
+    public ResponseEntity<List<MenuInfo>> getMenuByLanguage(
             @PathVariable Long userId,
             @PathVariable String langCode) {
-
         try {
-            // 1. 식당 정보 조회
-            RestaurantInfo restaurantInfo = storeService.getRestaurantInfoByUserId(userId);
-
-            // 2. 메뉴 정보 조회 (언어별)
             List<MenuInfo> menuList = menuService.getMenuInfoByLanguage(userId, langCode);
-
-            // 3. RestaurantInfo를 RestaurantInfoResponse로 변환 (언어별 번역 포함)
-            RestaurantInfoResponse restaurantInfoResponse = createTranslatedRestaurantInfo(restaurantInfo, langCode);
-
-            // 4. DTO로 묶어서 반환
-            MenuWithRestaurantResponse response = new MenuWithRestaurantResponse(restaurantInfoResponse, menuList);
-
-            return ResponseEntity.ok(response);
-
+            return ResponseEntity.ok(menuList);
         } catch (IllegalArgumentException e) {
             log.warn("잘못된 언어 코드: {}", e.getMessage());
             return ResponseEntity.badRequest().build();
-
         } catch (Exception e) {
             log.error("언어별 메뉴 조회 중 오류 발생: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().build();
         }
-    }
-
-    /**
-     * 식당 정보를 요청된 언어로 번역하여 RestaurantInfoResponse 생성
-     */
-    private RestaurantInfoResponse createTranslatedRestaurantInfo(RestaurantInfo restaurantInfo, String langCode) {
-        String restaurantName = restaurantInfo.getRestaurantName();
-        String restaurantAddress = restaurantInfo.getRestaurantAddress();
-        String shortDescription = restaurantInfo.getShortDescription();
-        String longDescription = restaurantInfo.getLongDescription();
-        Integer tableCount = restaurantInfo.getTableCount();
-        List<String> features = restaurantInfo.getFeatures();
-
-        // 한국어가 아닌 경우 번역 시도
-        if (!"ko".equals(langCode)) {
-            try {
-                if (restaurantName != null && !restaurantName.isEmpty()) {
-                    restaurantName = translateText(restaurantName, langCode);
-                }
-                if (shortDescription != null && !shortDescription.isEmpty()) {
-                    shortDescription = translateText(shortDescription, langCode);
-                }
-                if (longDescription != null && !longDescription.isEmpty()) {
-                    longDescription = translateText(longDescription, langCode);
-                }
-                // features도 번역
-                if (features != null && !features.isEmpty()) {
-                    features = features.stream()
-                            .map(feature -> translateText(feature, langCode))
-                            .toList();
-                }
-            } catch (Exception e) {
-                log.warn("식당 정보 번역 실패: {}", e.getMessage());
-                // 번역 실패 시 원본 텍스트 사용
-            }
-        }
-
-        return RestaurantInfoResponse.builder()
-                .restaurantName(restaurantName)
-                .restaurantAddress(restaurantAddress)
-                .shortDescription(shortDescription)
-                .longDescription(longDescription)
-                .tableCount(tableCount)
-                .features(features)
-                .build();
-    }
-
-    /**
-     * 텍스트를 지정된 언어로 번역
-     */
-    private String translateText(String text, String targetLangCode) {
-        try {
-            TranslationRequest request = TranslationRequest.builder()
-                    .text(text)
-                    .build();
-
-            String targetLanguage = getTargetLanguageName(targetLangCode);
-            TranslationResponse response = translationService.translate(request, targetLanguage, null);
-            return response.getTranslatedText();
-        } catch (Exception e) {
-            log.warn("텍스트 번역 실패: {} -> {}", text, e.getMessage());
-            return text; // 번역 실패 시 원본 텍스트 반환
-        }
-    }
-
-    /**
-     * 언어 코드를 언어명으로 변환
-     */
-    private String getTargetLanguageName(String langCode) {
-        return switch (langCode.toLowerCase()) {
-            case "en" -> "영어";
-            case "ch" -> "중국어";
-            case "ja" -> "일본어";
-            default -> throw new IllegalArgumentException("지원하지 않는 언어 코드입니다: " + langCode);
-        };
     }
 }
 */
