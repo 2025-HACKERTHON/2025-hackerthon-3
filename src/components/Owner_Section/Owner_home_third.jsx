@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios'; 
 import qr_btn from '../../assets/img/cus_order/qr_btn.svg';
 
 const Owner_home_third = () => {
   const TOTAL_PAGES = 5;
-  const current = 3; 
+  const current = 3;
   const navigate = useNavigate();
 
   const PAGE_SLUGS = ['first', 'second', 'third', 'fourth', 'fifth'];
   const pathFor = (n) => `/owner_home_${PAGE_SLUGS[(n - 1) % TOTAL_PAGES]}`;
-
 
   const goNext = () => navigate(pathFor((current % TOTAL_PAGES) + 1));
   const goPrev = () =>
@@ -24,47 +24,64 @@ const Owner_home_third = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  const tables = [
-    {
-      num: '테이블 1',
-      menu: ['소고기 미역국 정식 1', '제육볶음 덮밥 1'],
-      cardCount: '주문카드 2장',
-      cards: [
-        { title: '소고기 미역국 정식', desc: '비건 변경을 원해요' },
-        { title: '제육볶음 덮밥', desc: '마늘 빼주세요' },
-      ],
-    },
-    {
-      num: '테이블 2',
-      menu: ['소고기 미역국 정식 1', '제육볶음 덮밥 1'],
-      cardCount: '주문카드 2장',
-      cards: [
-        { title: '소고기 미역국 정식', desc: '맵기 조절 부탁해요' },
-        { title: '제육볶음 덮밥', desc: '밥은 적게 주세요' },
-      ],
-    },
-    {
-      num: '테이블 3',
-      menu: ['소고기 미역국 정식 1', '제육볶음 덮밥 1'],
-      cardCount: '주문카드 2장',
-      cards: [
-        { title: '소고기 미역국 정식', desc: '비건 변경을 원해요' },
-        { title: '제육볶음 덮밥', desc: '마늘 빼주세요' },
-      ],
-    },
-  ];
-
-    const [openSet, setOpenSet] = useState(new Set());
-    const toggleOpen = (idx) => {
-      setOpenSet((prev) => {
-        const next = new Set(prev);
-        if (next.has(idx)) next.delete(idx); 
-        else next.add(idx);                  
-        return next;
+  // API 응답을 화면 구조로 변환
+  const transformToTables = (apiResult = []) =>
+    apiResult.map((row) => {
+      const menu = (row.items ?? []).map((it) => `${it.menuName} ${it.quantity}`);
+      const cardCountNum = (row.items ?? []).reduce(
+        (sum, it) => sum + (Number(it.cardQuantity) || 0),
+        0
+      );
+      const cards = [];
+      (row.items ?? []).forEach((it) => {
+        const names = Array.isArray(it.cardNames) ? it.cardNames : [];
+        names.forEach((name) => {
+          const text = String(name || '').trim();
+          if (text.length > 0) {
+            cards.push({ title: it.menuName, desc: text });
+          }
+        });
       });
-    };
 
+      return {
+        num: `테이블 ${row.tableId}`,
+        menu,
+        cardCount: `주문카드 ${cardCountNum}장`,
+        cards,
+      };
+    });
 
+  // 하드코드 → API 연동
+  const [tables, setTables] = useState([]);
+  const [openSet, setOpenSet] = useState(new Set());
+  const toggleOpen = (idx) => {
+    setOpenSet((prev) => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      return next;
+    });
+  };
+
+  // API 호출 (proxy: http://3.38.135.47:8080)
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await axios.get('/api/orders/current', {
+          withCredentials: true, // 브라우저에 저장된 JSESSIONID 자동 전송
+        });
+        const data = res?.data?.result ?? [];
+        setTables(transformToTables(data));
+      } catch (err) {
+        // UI 변경 없이 콘솔만
+        console.error('[orders/current GET error]', {
+          status: err?.response?.status,
+          data: err?.response?.data,
+          err,
+        });
+      }
+    })();
+  }, []);
 
   return (
     <div className='ownerhometh_wrap container'>
@@ -81,7 +98,7 @@ const Owner_home_third = () => {
       <div className="table_list">
         <h1>실시간 주문 현황</h1>
 
-         {tables.map((t, idx) => (
+        {tables.map((t, idx) => (
           <div key={idx} className={`table ${openSet.has(idx) ? 'is-open' : ''}`}>
             <div className="table_left">
               <span className="num">{t.num}</span>
@@ -111,7 +128,6 @@ const Owner_home_third = () => {
           </div>
         ))}
       </div>
-
 
       <div className="trend_section">
         <h1 className="sec_title">최근 주문 경향</h1>
@@ -150,7 +166,7 @@ const Owner_home_third = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Owner_home_third
+export default Owner_home_third;

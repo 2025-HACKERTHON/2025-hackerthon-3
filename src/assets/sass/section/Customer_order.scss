@@ -12,7 +12,7 @@
         justify-content: space-between;
         padding: 0px 23px;
         backdrop-filter: blur(32.5px);
-        box-shadow: 0px 1px 16px 0px rgba(0, 0, 0, 0.1);
+        box-shadow: 0px 0px 16px 0px rgba(0, 0, 0, 0.1);
 
         .back_btn {
             width: 9px;
@@ -48,7 +48,7 @@
             width: 350px;
             height: 194px;
             background-color: var(--white);
-            box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.1);
+            box-shadow: 0px 0px 7.4px 0px rgba(0, 0, 0, 0.1);
             border-radius: 14px;
             padding: 0px 21px;
             display: flex;
@@ -329,27 +329,23 @@
         }
     }
 
-    /* ------------------------- */
     /* 별점 모달                  */
-    /* ------------------------- */
-    /* 오버레이 내부 스택: 모달박스 + 바깥 버튼을 세로로 정렬 */
     .rating_wrap {
         display: flex;
         flex-direction: column;
         align-items: center;
         gap: 12px;
-        /* 모달과 버튼 사이 간격 */
         width: 100%;
+        padding: 0px 10px;
     }
 
-    /* 별점 모달 박스 (요구 크기) */
     .rating_modal {
         width: 295px;
         height: 282px;
         max-width: calc(100% - 64px);
         background: #fff;
         border-radius: 18px;
-        padding: 20px 18px 16px;
+        padding: 20px 18px 26px;
         box-shadow: 0 18px 40px rgba(0, 0, 0, .14);
         text-align: center;
         animation: sheetPop .18s ease-out;
@@ -369,6 +365,7 @@
             gap: 8px;
             justify-content: center;
             margin-bottom: 10px;
+            padding: 0px 50px;
 
             .star {
                 background: transparent;
@@ -382,12 +379,10 @@
 
                 .star_img {
                     width: 50px;
-                    /* 필요시 조절 */
                     height: 50px;
                     display: block;
                     user-select: none;
                     pointer-events: none;
-                    /* 버튼이 클릭 받도록 */
                     transition: transform .12s ease-out;
                 }
 

@@ -4,7 +4,6 @@ import qr from '../../assets/img/owner_menu_edit/qr.svg'
 import edit from '../../assets/img/owner_menu_edit/edit.svg'
 import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
-import Menu_Edit_Popup1 from './Menu_Edit_Popup1'
 
 const MenuEditSection = ({ section,deleteSection }) => (
   <div className="menu_section" key={section.id}>
@@ -26,14 +25,12 @@ const MenuEditSection = ({ section,deleteSection }) => (
 );
 
   const Menu_Edit = ({}) => {
-    const [storeInfo, setStoreInfo] = useState(null);
+  const [storeInfo, setStoreInfo] = useState(null);
   const [menuSections, setMenuSections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  // 1. 팝업의 표시 여부를 관리할 상태 추가
-  const [isPopupOpen, setIsPopupOpen] = useState(false);
   const userId = '1';
 
   // 데이터 로딩 (axios 사용으로 변경)
@@ -65,19 +62,32 @@ const MenuEditSection = ({ section,deleteSection }) => (
   }, [userId]);
 
   const handleStoreInfoSave = async (updatedInfo) => {
-    const API_URL = `/api/store/${userId}/settings/store_info`;
-    try {
-      const response = await axios.patch(API_URL, updatedInfo);
-      if (response.status === 200) {
-        setStoreInfo(updatedInfo);
-        alert('가게 정보가 성공적으로 저장되었습니다.');
-        setIsPopupOpen(false);
-      }
-    } catch (error) {
-      console.error('가게 정보 저장 실패:', error);
-      alert('저장 중 오류가 발생했습니다.');
-    }
+  const API_URL = `/api/store/${userId}/settings/store_info`;
+
+  // API 명세서에 맞게 payload 객체의 키 이름을 수정합니다.
+  const payload = {
+    restaurantName: updatedInfo.name,
+    restaurantAddress: updatedInfo.address,
+    shortDescription: updatedInfo.description,
+    longDescription: updatedInfo.detail,
+    features: updatedInfo.tags, // 'tags'를 'features'로 변경
   };
+
+  try {
+    // 서버로 수정된 payload를 전송합니다.
+    const response = await axios.patch(API_URL, payload);
+
+    if (response.status === 200) {
+      // 성공 시 화면의 상태를 업데이트합니다.
+      // 서버가 수정한 값을 다시 보내준다면 response.data를 사용하는 것이 더 정확합니다.
+      setStoreInfo(updatedInfo); 
+      alert('가게 정보가 성공적으로 저장되었습니다.');
+    }
+  } catch (error) {
+    console.error('가게 정보 저장 실패:', error);
+    alert('저장 중 오류가 발생했습니다.');
+  }
+};
 
   // (deleteSection, addMenuSection 등 다른 함수는 기존과 동일)
   const deleteSection = (id) => { /* ... 기존 삭제 API 로직 ... */ };
@@ -105,9 +115,11 @@ const MenuEditSection = ({ section,deleteSection }) => (
             <div className="title">MENU EDIT</div>
             <div className="store">
               <h1>{storeInfo.name}</h1>
-              <div className="edit_icon" onClick={() => setIsPopupOpen(true)} style={{cursor: 'pointer'}}>
-                <img src={edit} alt="편집" />
-              </div>
+             <Link to='/menu_edit_popup1' state={{ initialInfo: storeInfo }}>
+                <div className="edit_icon">
+                    <img src={edit} alt="편집" />
+                </div>
+            </Link>
             </div>
             <p>{storeInfo.description}</p>
             <div className='text'>{storeInfo.detail}</div>
@@ -127,7 +139,7 @@ const MenuEditSection = ({ section,deleteSection }) => (
           </button>
           <button className="tanslation_btn">번역하기</button>
         </div>
-      </main>
+      </main>  
     </div>
   );
 };
