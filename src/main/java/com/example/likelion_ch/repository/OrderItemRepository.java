@@ -37,5 +37,13 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
             "WHERE oi.user.id = :userId " +
             "GROUP BY oi.language")
     List<Object[]> countLanguageByUser(Long userId);
+
+    // storeId(가게) + language 기준 top 메뉴 ID 조회
+    @Query("SELECT oi.menu.id FROM OrderItem oi " +
+            "WHERE oi.menu.user.id = :userId AND oi.language = :language " +
+            "GROUP BY oi.menu.id " +
+            "ORDER BY SUM(oi.quantity) DESC")
+    List<Long> findTopMenuIdsByUserAndLanguage(@Param("userId") Long userId,
+                                                @Param("language") String language);
 }
 
