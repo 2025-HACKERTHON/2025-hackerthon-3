@@ -21,13 +21,13 @@ const Menu_language = () => {
 
 
     const [menus, setMenus] = useState([]); // API 결과 저장
-        const [loading, setLoading] = useState(true);
-        const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
 
-        useEffect(() => {
+      useEffect(() => {
       const userId = '1';
-      const lang = 'KR'; // API 명세서에 따른 언어 값 (예: KR, EN, JP, CN)
+      const lang = 'KR'; 
 
       const fetchLanguageMenus = async () => {
         setLoading(true);
@@ -54,7 +54,41 @@ const Menu_language = () => {
   };
 
     fetchLanguageMenus();
-    }, []); // 컴포넌트가 처음 렌더링될 때 한 번만 실행
+    }, []); 
+
+
+    const [storeInfo, setStoreInfo] = useState(null);
+
+      useEffect(() => {
+            const userId = '1'; 
+    
+            const fetchAllData = async () => {
+                try {
+                    setLoading(true);
+                    
+                    const response = await fetch(`/api/store/${userId}/all`); // <-- /all이 포함되어 있는지 확인
+                    if (!response.ok) {
+                        throw new Error('API 호출에 실패했습니다.');
+                    }
+                    const data = await response.json();
+    
+                    setStoreInfo({
+                        name: data.restaurantName,
+                        address: data.restaurantAddress,
+                        shortDescription: data.shortDescription,
+                        longDescription: data.longDescription,
+                        features: data.features || []
+                    });
+    
+                } catch (err) {
+                    setError(err);
+                } finally {
+                    setLoading(false);
+                }
+            };
+    
+            fetchAllData();
+        }, []);
 
   return (
     <div id="Menu_Language_Wrap" className="container">
@@ -69,24 +103,21 @@ const Menu_language = () => {
                 </div>
             </header>
             <main>
-                <div className="store_info">
-                <div className="store">
-                    RESTAURANT
-                </div>
-                <h1>한그릇</h1>
-                <p>한국의 정을 담은 따듯한 한 끼</p>
-                <div className="text">
-                    “한그릇”은 계절마다 바뀌는 따끈한 국물 요리와 밥
-                    <br />한 그릇을 정성스럽게 차려내는 따뜻한 동네 식당입니다.
-                </div>
-                <div className="map">
-                    서울 서대문구 홍제5동 하나빌딩 1층
-                </div>  
-                <div className="tags">
-                    <div className="tag">매운맛 조절 가능</div>
-                    <div className="tag">비건 변경 가능</div>
-                </div>
-                </div>
+                  {storeInfo && (
+              <div className="store_info">
+                  <div className="store">RESTAURANT</div>
+                  <h1>{storeInfo.name}</h1>
+                  <p>{storeInfo.shortDescription}</p>
+                  <div className="text" dangerouslySetInnerHTML={{ __html: (storeInfo.longDescription || '').replace(/\n/g, '<br />') }} />
+                  <div className="map">{storeInfo.address}</div>
+                  <div className="tags">
+
+                      {storeInfo.features.map((feature, index) => (
+                          <div key={index} className="tag">{feature}</div>
+                      ))}
+                  </div>
+              </div>
+              )}
                 <div className="menu">
                 <h1 className='menu_text'>메뉴 보기</h1>
                 <div className="tags">
@@ -109,7 +140,7 @@ const Menu_language = () => {
                     <div className="tag">맵지 않은 메뉴</div>
                 </div>
                 <div className="menu_list">
-                    <div className="recommend_text">일본인 손님들에겐 가장 인기인 메뉴에요!</div>
+                    {/* <div className="recommend_text">일본인 손님들에겐 가장 인기인 메뉴에요!</div> */}
             {menus.map((menu, idx) => (
              <div>
                <div className="num">No. {idx + 1}</div>

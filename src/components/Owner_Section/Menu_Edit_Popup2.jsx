@@ -4,53 +4,88 @@ import qr from '../../assets/img/owner_menu_edit/qr.svg'
 import edit from '../../assets/img/owner_menu_edit/edit.svg'
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import axios from 'axios'
 
 const Menu_Edit_Popup2 = ({ storeInfo, saveStoreData, selectedTags, menuSections, updateMenuSection, saveImage, imagePreviewUrl }) => {
 
+  const userId='1';
   const navigate = useNavigate();
-  const { id } = useParams(); 
-  const sectionId = Number(id);
-  const section = menuSections.find(s => s.id === sectionId);
+  const { id } = useParams();
+  const sectionId = id ? Number(id) : null; // URL에서 메뉴 ID를 가져옴
+  const section = sectionId ? menuSections.find(s => s.id === sectionId) : null;
 
-  // 이미지 파일 상태
   const [imageFile, setImageFile] = useState(null);
-
-  // 미리보기 URL
   const [imagePreview, setImagePreview] = useState(section?.imagePreviewUrl ?? null);
-  const [info1, setInfo1] = useState(section || { name: '', description: '', price: '' });  // input 참조값
+  const [info, setInfo] = useState(section || { nameKo: '', description: '', price: '' });
   const fileInputRef = useRef();
 
-  // 이미지 업로드 처리
   const handleImageChange = e => {
     const file = e.target.files[0];
     if (file) {
       const previewUrl = URL.createObjectURL(file);
       setImageFile(file);
-    setImagePreview(previewUrl);
-    setInfo1(prev => ({ ...prev, imagePreviewUrl: previewUrl }));
+      setImagePreview(previewUrl);
     }
   };
 
-  // 버튼 클릭 시 file input 클릭
   const handleButtonClick = () => {
-    if(fileInputRef.current) fileInputRef.current.click();
+    if (fileInputRef.current) fileInputRef.current.click();
   };
 
-    
   const handleChange = e => {
     const { name, value } = e.target;
-    setInfo1(prev => ({ ...prev, [name]: value }));
+    setInfo(prev => ({ ...prev, [name]: value }));
   };
 
-  const onSave = () => {
-    updateMenuSection(sectionId, { ...info1, imagePreviewUrl: imagePreview });
-    navigate('/menu_edit')
+  const onSave = async () => {
+    const formData = new FormData();
+    formData.append('nameKo', info.nameKo);
+    formData.append('description', info.description);
+    formData.append('price', info.price);
+    
+    if (imageFile) {
+      formData.append('image', imageFile);
+    }
+
+    try {
+      let response;
+      // sectionId가 있으면 '수정(PUT)', 없으면 '추가(POST)'
+      if (sectionId) {
+        // --- 메뉴 수정 (PUT 요청) ---
+        const API_URL = `/api/store/${userId}/settings/menu_info/id/${sectionId}`;
+        response = await axios.put(API_URL, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        alert('메뉴가 성공적으로 수정되었습니다.');
+      } else {
+        // --- 메뉴 추가 (POST 요청) ---
+        const API_URL = `/api/store/${userId}/settings/menu_info`;
+        response = await axios.post(API_URL, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        alert('메뉴가 성공적으로 추가되었습니다.');
+      }
+
+      if (response.status === 200 || response.status === 201) {
+        navigate('/menu_edit');
+      }
+    } catch (error) {
+      console.error('메뉴 저장/수정 실패:', error);
+      alert('메뉴 저장/수정 중 오류가 발생했습니다.');
+    }
   };
 
   useEffect(() => {
-    setImagePreview(section?.imagePreviewUrl ?? null);
-    setInfo1(section || { name: '', description: '', price: '' }); 
+    if (section) {
+      setInfo({
+        nameKo: section.nameKo || '',
+        description: section.description || '',
+        price: section.price || '',
+      });
+      setImagePreview(section.imagePreviewUrl || null);
+    }
   }, [section]);
+
 
   return (
     <div id="Menu_Edit_Popup2_Wrap" className="container">
@@ -60,9 +95,9 @@ const Menu_Edit_Popup2 = ({ storeInfo, saveStoreData, selectedTags, menuSections
             {imagePreview ? <img src={imagePreview} alt="업로드 이미지" /> : <>이미지를<br />추가해주세요.</>}
         </div>
          <div className="popup_content">
-            <input type="text" className="name" name='name' value={info1.name} onChange={handleChange} placeholder='메뉴명' />
-            <textarea name="description" id="" className="info" value={info1.description} onChange={handleChange} placeholder='메뉴 설명'></textarea>
-            <input type="text" className="price1" name='price' value={info1.price} onChange={handleChange} placeholder='메뉴 가격' />
+            <input type="text" className="name" name='name' value={info.name} onChange={handleChange} placeholder='메뉴명' />
+            <textarea name="description" id="" className="info" value={info.description} onChange={handleChange} placeholder='메뉴 설명'></textarea>
+            <input type="text" className="price1" name='price' value={info.price} onChange={handleChange} placeholder='메뉴 가격' />
             <div className="price2">원</div>
          </div>
          <div className="popup_btn">

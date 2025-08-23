@@ -45,9 +45,9 @@ const Cus_order = () => {
   return (
     <div className='cusorder_wrap container'>
       <div className="header">
-        <Link to='/'>
-          <button className="back_btn"><img src={back_btn} alt="" /></button>
-        </Link>
+       <Link to='/'>
+        <button className="back_btn"><img src={back_btn} alt="" /></button>
+       </Link>
         <div className="right_btns">
           <button className="qr"><img src={qr_btn} alt="" /></button>
           <button className="trans"><img src={trans_btn} alt="" /></button>

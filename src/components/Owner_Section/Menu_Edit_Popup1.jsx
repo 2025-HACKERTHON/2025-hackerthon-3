@@ -5,11 +5,11 @@ import edit from '../../assets/img/owner_menu_edit/edit.svg'
 import { Link, useNavigate} from 'react-router-dom'
 import { useState } from 'react'
 
-const Menu_Edit_Popup1 = ({ storeInfo, saveStoreData, selectedTags }) => {
-  const [info, setInfo] = useState(storeInfo);
-  const [tags, setTags] = useState(selectedTags || []);
-  const navigate = useNavigate();
-
+const Menu_Edit_Popup1 = ({ storeInfo, saveStoreData, selectedTags, initialStoreInfo, onSave }) => {
+  
+  const [info, setInfo] = useState(initialStoreInfo || {});
+  const [tags, setTags] = useState(initialStoreInfo?.tags || []);
+  
   const handleChange = e => {
     const { name, value } = e.target;
     setInfo(prev => ({ ...prev, [name]: value }));
@@ -21,11 +21,11 @@ const Menu_Edit_Popup1 = ({ storeInfo, saveStoreData, selectedTags }) => {
     );
   };
 
-  // 완료(저장)시, storeInfo와 tags를 부모에 넘기고 페이지 이동
-  const onSave = () => {
-    saveStoreData(info, tags);
-    navigate('/menu_edit');
+  // '완료' 버튼 클릭 시, 부모에게 수정된 데이터를 전달하는 역할만 합니다.
+  const handleSave = () => {
+    onSave({ ...info, tags });
   };
+
 
   return (
     <div id="Menu_Edit_Popup1_Wrap" className="container">
@@ -59,9 +59,7 @@ const Menu_Edit_Popup1 = ({ storeInfo, saveStoreData, selectedTags }) => {
                     ))}
                 </div>
               </div>
-                <Link to='/menu_edit'>
-                    <button className='save_btn' onClick={onSave}>완료</button>
-                </Link>
+              <button className='save_btn' onClick={handleSave}>완료</button>
          </div>
      </div>
      <div className="popup_bg"></div>

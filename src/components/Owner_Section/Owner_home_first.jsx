@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import qr_btn from '../../assets/img/cus_order/qr_btn.svg';
+import { Link } from 'react-router-dom';
 
 const Owner_home_first = () => {
   const TOTAL_PAGES = 5;
@@ -65,7 +66,9 @@ const Owner_home_first = () => {
   return (
     <div className='ownerhomef_wrap container'>
       <div className="header">
-        <button className="qr"><img src={qr_btn} alt="" /></button>
+        <Link to='/menu_edit'>
+          <button className="qr"><img src={qr_btn} alt="" /></button>
+        </Link>
       </div>
 
       <div className="text">

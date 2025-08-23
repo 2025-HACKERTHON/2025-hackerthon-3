@@ -4,16 +4,16 @@
     header{
         position: relative;
         display: flex;
-        align-items: center;
         justify-content: center;
 
         .icon{
             width: 100%;
             position: absolute;
+            z-index: 1;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 21px;
+            padding: 33px 21px;
 
             .back_icon{
             width: 9px;
@@ -29,7 +29,7 @@
         .header{
             width: 100%;
             height: 78px;
-            background-color: var(--blue01);
+            background-color: #B3E8FF;
             opacity: 30%;
         }
     }
@@ -204,6 +204,7 @@
 
             .tanslation_btn{
                 margin-top: 172px;
+                margin-bottom: 69px;
                 width: 314px;
                 height: 46px;
                 background-color: var(--blue01);
@@ -358,7 +359,6 @@
     header{
         position: relative;
         display: flex;
-        align-items: center;
         justify-content: center;
 
         .icon{
@@ -367,7 +367,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 21px;
+            padding: 33px 21px;
+
 
             .back_icon{
             width: 9px;
@@ -383,7 +384,7 @@
         .header{
             width: 100%;
             height: 78px;
-            background-color: var(--blue01);
+            background-color: #B3E8FF;
             opacity: 30%;
         }
     }
@@ -612,8 +613,8 @@
 
             .price2{
                 font-weight: normal;
-                top: 128px;
-                left: 235px;
+                top: 127px;
+                left: calc(50% + 40px);
                 position: absolute;
             }
         }
@@ -663,10 +664,9 @@
 
     padding-top: 0;
 
-    header{
+     header{
         position: relative;
         display: flex;
-        align-items: center;
         justify-content: center;
 
         .icon{
@@ -675,7 +675,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 21px;
+            padding: 33px 21px;
+
 
             .back_icon{
             width: 9px;
@@ -691,7 +692,7 @@
         .header{
             width: 100%;
             height: 78px;
-            background-color: var(--blue01);
+            background-color: #B3E8FF;
             opacity: 30%;
         }
     }

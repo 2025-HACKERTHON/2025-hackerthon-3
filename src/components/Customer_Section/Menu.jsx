@@ -8,7 +8,8 @@ import { Link } from 'react-router-dom'
 import NumberSelector from './Menu_Table'
 
 const Menu = () => {
-    // API로부터 받을 상태 변수들
+
+    const [storeInfo, setStoreInfo] = useState(null);
     const [menus, setMenus] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -24,20 +25,29 @@ const Menu = () => {
     };
 
     useEffect(() => {
-        const userId = '1';
+        const userId = '1'; 
 
         const fetchAllData = async () => {
             try {
                 setLoading(true);
-                const response = await fetch(`/api/store/${userId}/all`);
+               
+                const response = await fetch(`/api/store/${userId}/all`); // <-- /all이 포함되어 있는지 확인
                 if (!response.ok) {
                     throw new Error('API 호출에 실패했습니다.');
                 }
-                const data = await response.json(); // 실제 데이터: { menus: [...] }
+                const data = await response.json();
 
-                // 1. 실제 데이터 구조에 맞게 메뉴 상태만 업데이트
-                if (data && Array.isArray(data.menus)) {
-                    setMenus(data.menus); // 필터링 없이 바로 배열을 사용
+                setStoreInfo({
+                    name: data.restaurantName,
+                    address: data.restaurantAddress,
+                    shortDescription: data.shortDescription,
+                    longDescription: data.longDescription,
+                    features: data.features || []
+                });
+
+                if (data.menus && typeof data.menus === 'object') {
+                    const menuArray = Object.values(data.menus);
+                    setMenus(menuArray);
                 } else {
                     setMenus([]);
                 }
@@ -67,22 +77,21 @@ const Menu = () => {
               </div>
            </header>
             <main>
-              <div className="store_info">
-                    <div className="store">RESTAURANT</div>
-                    <h1>한그릇</h1>
-                    <p>한국의 정을 담은 따듯한 한 끼</p>
-                    <div className="text">
-                        “한그릇”은 계절마다 바뀌는 따끈한 국물 요리와 밥
-                        <br />한 그릇을 정성스럽게 차려내는 따뜻한 동네 식당입니다.
+                {storeInfo && (
+                    <div className="store_info">
+                        <div className="store">RESTAURANT</div>
+                        <h1>{storeInfo.name}</h1>
+                        <p>{storeInfo.shortDescription}</p>
+                        <div className="text" dangerouslySetInnerHTML={{ __html: (storeInfo.longDescription || '').replace(/\n/g, '<br />') }} />
+                        <div className="map">{storeInfo.address}</div>
+                        <div className="tags">
+
+                            {storeInfo.features.map((feature, index) => (
+                                <div key={index} className="tag">{feature}</div>
+                            ))}
+                        </div>
                     </div>
-                    <div className="map">
-                        서울 서대문구 홍제5동 하나빌딩 1층
-                    </div>  
-                    <div className="tags">
-                        <div className="tag">매운맛 조절 가능</div>
-                        <div className="tag">비건 변경 가능</div>
-                    </div>
-                </div>
+                )}
               <div className="menu">
                   <h1 className='menu_text'>메뉴 보기</h1>
                   <div className="tags">
@@ -94,17 +103,17 @@ const Menu = () => {
                   </div>
                   <div className="menu_list">
                         {menus.map((menu, idx) => (
-                            <div key={menu.menuName || idx} className={`menu_card menu${idx + 1}`}>
+                            <div key={menu.nameKo || idx} className={`menu_card menu${idx + 1}`}>
                                 <div className="text">
-                                    <h1>{menu.menuName}</h1> 
-                                    <p>{menu.shortDescription}</p>
+                                    <h1>{menu.nameKo}</h1>
+                                    <p>{menu.description}</p>
                                 </div>
                                 <div className="order">
                                     <button className="order_btn">주문</button>
                                     <div className="order_count">
-                                        <button className="count_minus" onClick={() => handleMinus(menu.menuName)}>-</button>
-                                        <div className="count">{counts[menu.menuName] || 0}</div>
-                                        <button className="count_plus" onClick={() => handlePlus(menu.menuName)}>+</button>
+                                        <button className="count_minus" onClick={() => handleMinus(menu.nameKo)}>-</button>
+                                        <div className="count">{counts[menu.nameKo] || 0}</div>
+                                        <button className="count_plus" onClick={() => handlePlus(menu.nameKo)}>+</button>
                                     </div>
                                 </div>
                             </div>

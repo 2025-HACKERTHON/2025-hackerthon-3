@@ -6,6 +6,7 @@ import header from '../../assets/img/cus_menu/header.png'
 import cart from '../../assets/img/cus_menu/cart.svg'
 import { Link } from 'react-router-dom'
 import NumberSelector from './Menu_Table'
+import axios from 'axios'
 
 const Menu_Best = () => {
 
@@ -19,33 +20,73 @@ const Menu_Best = () => {
         setCounts(prev => prev.map((val, i) => (i === idx ? (val > 0 ? val - 1 : 0) : val)));
       };
 
-    const [menus, setMenus] = useState([]); // API 결과 저장
+    const [menus, setMenus] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+   useEffect(() => {
+        const userId = '1';
 
-  useEffect(() => {
-    const userId = '1';
+         const fetchBestMenus = async () => {
+            try {
 
-    fetch(`/api/store/${userId}/top3`)
-      .then(response => {
-        // 서버에서 4xx, 5xx 에러 응답을 받았을 때를 대비한 최소한의 방어 코드
-        if (!response.ok) {
-          throw new Error('API 호출에 실패했습니다.');
-        }
-        return response.json();
-      })
-      .then(data => {
-        // data.topMenus가 존재하고 배열일 경우에만 상태 업데이트
-        if (data && Array.isArray(data.topMenus)) {
-          setMenus(data.topMenus);
-        }
-      })
-      .catch(error => {
-        console.error('데이터를 가져오는 데 실패했습니다:', error);
-        setError(error); 
-      });
-  }, []);
+                setLoading(true);
+                setError(null);
+
+                // 1. fetch 대신 axios.get 사용
+                const response = await axios.get(`/api/store/${userId}/top3`);
+                
+                // 2. axios는 데이터를 자동으로 JSON 변환해주므로, response.data로 바로 접근
+                const data = response.data;
+
+                if (data && Array.isArray(data.topMenus)) {
+                    setMenus(data.topMenus);
+                } else {
+                    setMenus([]);
+                }
+            } catch (err) {
+                // 3. 404, 500 등 에러 발생 시 자동으로 이곳으로 이동
+                setError(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchBestMenus();
+    }, []);
+
+    const [storeInfo, setStoreInfo] = useState(null);
+
+     useEffect(() => {
+            const userId = '1'; 
+    
+            const fetchAllData = async () => {
+                try {
+                    setLoading(true);
+                   
+                    const response = await fetch(`/api/store/${userId}/all`); // <-- /all이 포함되어 있는지 확인
+                    if (!response.ok) {
+                        throw new Error('API 호출에 실패했습니다.');
+                    }
+                    const data = await response.json();
+    
+                    setStoreInfo({
+                        name: data.restaurantName,
+                        address: data.restaurantAddress,
+                        shortDescription: data.shortDescription,
+                        longDescription: data.longDescription,
+                        features: data.features || []
+                    });
+    
+                } catch (err) {
+                    setError(err);
+                } finally {
+                    setLoading(false);
+                }
+            };
+    
+            fetchAllData();
+        }, []);
 
   return (
     <div id="Menu_Best_Wrap" className="container">
@@ -60,24 +101,21 @@ const Menu_Best = () => {
             </div>
         </header>
         <main>
+            {storeInfo && (
             <div className="store_info">
-            <div className="store">
-                RESTAURANT
+                <div className="store">RESTAURANT</div>
+                <h1>{storeInfo.name}</h1>
+                <p>{storeInfo.shortDescription}</p>
+                <div className="text" dangerouslySetInnerHTML={{ __html: (storeInfo.longDescription || '').replace(/\n/g, '<br />') }} />
+                <div className="map">{storeInfo.address}</div>
+                <div className="tags">
+
+                    {storeInfo.features.map((feature, index) => (
+                        <div key={index} className="tag">{feature}</div>
+                    ))}
+                </div>
             </div>
-            <h1>한그릇</h1>
-            <p>한국의 정을 담은 따듯한 한 끼</p>
-            <div className="text">
-                “한그릇”은 계절마다 바뀌는 따끈한 국물 요리와 밥
-                <br />한 그릇을 정성스럽게 차려내는 따뜻한 동네 식당입니다.
-            </div>
-            <div className="map">
-                서울 서대문구 홍제5동 하나빌딩 1층
-            </div>  
-            <div className="tags">
-                <div className="tag">매운맛 조절 가능</div>
-                <div className="tag">비건 변경 가능</div>
-            </div>
-            </div>
+            )}
             <div className="menu">
             <h1 className='menu_text'>메뉴 보기</h1>
             <div className="tags">
