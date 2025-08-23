@@ -20,50 +20,52 @@ const Menu_Best = () => {
         setCounts(prev => prev.map((val, i) => (i === idx ? (val > 0 ? val - 1 : 0) : val)));
       };
 
-    const [menus, setMenus] = useState([]);
+     const [menus, setMenus] = useState([]); // API 결과 저장
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-   useEffect(() => {
-        const userId = '1';
 
-         const fetchBestMenus = async () => {
-            try {
+      useEffect(() => {
+      const userId = '1';
+      const lang = 'KR'; 
 
-                setLoading(true);
-                setError(null);
+      const fetchLanguageMenus = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+      const response = await fetch(`/api/store/${userId}/recommend?lang=${lang}`);
+      if (!response.ok) {
+        throw new Error('API 호출에 실패했습니다.');
+      }
+      const data = await response.json();
+      
+      if (data && Array.isArray(data.topMenus)) {
+        setMenus(data.topMenus);
+      } else {
+        console.error("API 응답에 topMenus 배열이 없습니다.");
+        setMenus([]);
+      }
+    } catch (err) {
+      console.error('데이터를 가져오는 데 실패했습니다:', err);
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-                // 1. fetch 대신 axios.get 사용
-                const response = await axios.get(`/api/store/${userId}/top3`);
-                
-                // 2. axios는 데이터를 자동으로 JSON 변환해주므로, response.data로 바로 접근
-                const data = response.data;
+    fetchLanguageMenus();
+    }, []); 
 
-                if (data && Array.isArray(data.topMenus)) {
-                    setMenus(data.topMenus);
-                } else {
-                    setMenus([]);
-                }
-            } catch (err) {
-                // 3. 404, 500 등 에러 발생 시 자동으로 이곳으로 이동
-                setError(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchBestMenus();
-    }, []);
 
     const [storeInfo, setStoreInfo] = useState(null);
 
-     useEffect(() => {
+      useEffect(() => {
             const userId = '1'; 
     
             const fetchAllData = async () => {
                 try {
                     setLoading(true);
-                   
+                    
                     const response = await fetch(`/api/store/${userId}/all`); // <-- /all이 포함되어 있는지 확인
                     if (!response.ok) {
                         throw new Error('API 호출에 실패했습니다.');
@@ -87,7 +89,6 @@ const Menu_Best = () => {
     
             fetchAllData();
         }, []);
-
   return (
     <div id="Menu_Best_Wrap" className="container">
         <img src={main} alt="" className="main" />
