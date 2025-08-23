@@ -1,16 +1,32 @@
-import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom'; // useLocation 추가
-import Vector from '../../assets/img/Vector 5.png'
-import QR from '../../assets/img/bx_qr (1).png'
-import VectorChoice from '../../assets/img/owner_menu_edit/Vector_language .png'
-import QRadd from '../../assets/img/owner_menu_edit/Frame 17.png'
-import Edit from '../../assets/img/owner_menu_edit/Frame 8.png'
-import Vectorup from '../../assets/img/owner_menu_edit/Vector up .png'
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import Vector from '../../assets/img/Vector 5.png';
+import QR from '../../assets/img/bx_qr (1).png';
+import VectorChoice from '../../assets/img/owner_menu_edit/Vector_language .png';
+import QRadd from '../../assets/img/owner_menu_edit/Frame 17.png';
+import Edit from '../../assets/img/owner_menu_edit/Frame 8.png';
+import Vectorup from '../../assets/img/owner_menu_edit/Vector up .png';
 
 const Menu_Chinese = () => {
   const navigate = useNavigate();
   const location = useLocation(); 
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
+
+  // 🔹 API 데이터 상태
+  const [restaurantInfo, setRestaurantInfo] = useState(null);
+  const [menuList, setMenuList] = useState([]);
+
+  // ✅ API 호출
+  useEffect(() => {
+    const userId = 2; // 👉 실제 userId로 변경 필요
+    fetch(`api/store/${userId}/settings/menu_info/lang/ch`)
+      .then(res => res.json())
+      .then(data => {
+        setRestaurantInfo(data.restaurantInfo);
+        setMenuList(data.menuList);
+      })
+      .catch(err => console.error("API 호출 실패:", err));
+  }, []);
 
   const getSelectedLang = () => {
     if (location.pathname.includes("english")) return "영어";
@@ -23,13 +39,17 @@ const Menu_Chinese = () => {
     if (lang === "영어") navigate("/menu_english");
     if (lang === "중국어") navigate("/menu_chinese");
     if (lang === "일본어") navigate("/menu_japanese");
-
     setShowLanguageMenu(false);
   };
+
+  if (!restaurantInfo) {
+    return <div>Loading...</div>; // 데이터 로딩 중
+  }
 
   return (
     <div>
       <div className="Menu_Chinese_wrap">
+        {/* 상단 네비 */}
         <div className="nav">
           <button className="vector" onClick={() => navigate(-1)}>
             <img src={Vector} alt="뒤로가기" />
@@ -43,15 +63,16 @@ const Menu_Chinese = () => {
           </div>
         </div>
 
+        {/* 언어 선택 */}
         <div className="language_bar">
           <p>{getSelectedLang()}메뉴</p>
           <div className="language_choice">
-             <button onClick={() => setShowLanguageMenu(!showLanguageMenu)}>
-                {showLanguageMenu ? (
+            <button onClick={() => setShowLanguageMenu(!showLanguageMenu)}>
+              {showLanguageMenu ? (
                 <img src={Vectorup} alt="언어 선택 닫기" />
-                ) : (
+              ) : (
                 <img src={VectorChoice} alt="언어 선택" />
-                )}
+              )}
             </button>
             {showLanguageMenu && (
               <div className="language_dropdown">
@@ -75,74 +96,46 @@ const Menu_Chinese = () => {
           </div>
         </div>
 
+        {/* 식당 정보 */}
         <div className="menu_name">
-          <h1>韩格鲁特</h1>
-          <h2>与韩国友谊共度的温馨餐点</h2>
-          <p>
-            一道热腾腾的汤品和随着季节变化的米饭<br />
-            这是一家温馨的当地餐厅，精心端上一碗。</p>
-          <p>
-            首尔西大门区洪杰5洞汉娜大楼一楼</p>
+          <h1>{restaurantInfo.restaurantName}</h1>
+          <h2>{restaurantInfo.shortDescription}</h2>
+          <p>{restaurantInfo.longDescription}</p>
+          <p>{restaurantInfo.restaurantAddress}</p>
         </div>
 
+        {/* 특징 */}
         <div className="detail_box">
-          <div className="detail1">
-            <p>可以控制辣味</p>
-          </div>
-          <div className="detail2">
-            <p>可以改变素食者</p>
-          </div>
+          {restaurantInfo.features && restaurantInfo.features.length > 0 ? (
+            restaurantInfo.features.map((feature, idx) => (
+              <div key={idx} className={`detail${idx+1}`}>
+                <p>{feature}</p>
+              </div>
+            ))
+          ) : (
+            <p>没有特别的特点</p>
+          )}
         </div>
 
+        {/* 메뉴 리스트 */}
         <div className="menu_edit">
           <div className="title">
             <p>메뉴 편집</p>
           </div>
           <div className="menu_box">
-            <div className="menu_1">
-              <button><img src={Edit} alt="" /></button>
-              <h3>牛肉海藻汤品套装</h3>
-              <h4>
-                海藻汤配软牛肉和浓汤+米饭+三道<br />
-                小菜。 它不辣！
-              </h4>
-            </div>
-            <div className="menu_2">
-              <button><img src={Edit} alt="" /></button>
-              <h3>麻辣猪肉配米饭</h3>
-              <h4>
-                从辛辣甜美的炒猪肉到美味的煎<br />
-                蛋。
-              </h4>
-            </div>
-            <div className="menu_3">
-              <button><img src={Edit} alt="" /></button>
-              <h3>紫苏油拌饭</h3>
-              <h4>
-                韩国素食石锅拌饭，混合了五种草<br />
-                药、大米、紫苏油和酱油。
-              </h4>
-            </div>
-            <div className="menu_4">
-              <button><img src={Edit} alt="" /></button>
-              <h3>海鲜和豆腐鸡块</h3>
-              <h4>
-                味道温和的软豆腐，富含虾、鱿鱼<br />
-                和蛤蜊。
-              </h4>
-            </div>
-            <div className="menu_5">
-              <button><img src={Edit} alt="" /></button>
-              <h3>辛奇煎饼</h3>
-              <h4>
-                一套简单的早午餐套餐，配有脆脆的<br />
-                辛奇煎饼和新鲜的柑橘类水果。
-              </h4>
-            </div>
+            {menuList.map(menu => (
+              <div key={menu.menuId} className="menu_item">
+                <button><img src={Edit} alt="편집" /></button>
+                <h3>{menu.nameKo}</h3>
+                <h4>{menu.description}</h4>
+                <p>{menu.price.toLocaleString()}원</p>
+              </div>
+            ))}
           </div>
           <div className="bottom">
             <button onClick={() => navigate('/owner_qr')}>
-              <img src={QRadd} alt="" /></button>
+              <img src={QRadd} alt="추가" />
+            </button>
           </div>
         </div>
       </div>

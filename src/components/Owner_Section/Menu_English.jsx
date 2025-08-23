@@ -1,16 +1,32 @@
-import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom'; // useLocation 추가
-import Vector from '../../assets/img/Vector 5.png'
-import QR from '../../assets/img/bx_qr (1).png'
-import VectorChoice from '../../assets/img/owner_menu_edit/Vector_language .png'
-import QRadd from '../../assets/img/owner_menu_edit/Frame 17.png'
-import Edit from '../../assets/img/owner_menu_edit/Frame 8.png'
-import Vectorup from '../../assets/img/owner_menu_edit/Vector up .png'
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import Vector from '../../assets/img/Vector 5.png';
+import QR from '../../assets/img/bx_qr (1).png';
+import VectorChoice from '../../assets/img/owner_menu_edit/Vector_language .png';
+import QRadd from '../../assets/img/owner_menu_edit/Frame 17.png';
+import Edit from '../../assets/img/owner_menu_edit/Frame 8.png';
+import Vectorup from '../../assets/img/owner_menu_edit/Vector up .png';
 
 const Menu_English = () => {
   const navigate = useNavigate();
   const location = useLocation(); 
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
+
+  // 🔹 API에서 가져올 데이터 상태
+  const [restaurantInfo, setRestaurantInfo] = useState(null);
+  const [menuList, setMenuList] = useState([]);
+
+  // ✅ API 호출
+  useEffect(() => {
+    const userId = 2; // 👉 필요한 userId 넣어주기
+    fetch(`api/store/${userId}/settings/menu_info/lang/en`)
+      .then(res => res.json())
+      .then(data => {
+        setRestaurantInfo(data.restaurantInfo);
+        setMenuList(data.menuList);
+      })
+      .catch(err => console.error("API 호출 실패:", err));
+  }, []);
 
   const getSelectedLang = () => {
     if (location.pathname.includes("english")) return "영어";
@@ -27,9 +43,14 @@ const Menu_English = () => {
     setShowLanguageMenu(false);
   };
 
+  if (!restaurantInfo) {
+    return <div>Loading...</div>; // 데이터 오기 전 로딩 표시
+  }
+
   return (
     <div>
       <div className="Menu_English_wrap">
+        {/* 상단 네비 */}
         <div className="nav">
           <button className="vector" onClick={() => navigate(-1)}>
             <img src={Vector} alt="뒤로가기" />
@@ -43,15 +64,16 @@ const Menu_English = () => {
           </div>
         </div>
 
+        {/* 언어 선택 */}
         <div className="language_bar">
           <p>{getSelectedLang()}메뉴</p>
           <div className="language_choice">
-             <button onClick={() => setShowLanguageMenu(!showLanguageMenu)}>
-                {showLanguageMenu ? (
+            <button onClick={() => setShowLanguageMenu(!showLanguageMenu)}>
+              {showLanguageMenu ? (
                 <img src={Vectorup} alt="언어 선택 닫기" />
-                ) : (
+              ) : (
                 <img src={VectorChoice} alt="언어 선택" />
-                )}
+              )}
             </button>
             {showLanguageMenu && (
               <div className="language_dropdown">
@@ -75,80 +97,46 @@ const Menu_English = () => {
           </div>
         </div>
 
+        {/* 식당 정보 */}
         <div className="menu_name">
-          <h1>Han Greut</h1>
-          <h2>A Warm Meal with Korean Friendship</h2>
-          <p>
-            A hot soup dish and rice that changes from season to season<br />
-            It is a warm local restaurant that carefully serves a bowl.
-          </p>
-          <p>
-            1st floor of Hana Building in Hongje 5-dong,<br />
-            Seodaemun-gu, Seoul
-          </p>
+          <h1>{restaurantInfo.restaurantName}</h1>
+          <h2>{restaurantInfo.shortDescription}</h2>
+          <p>{restaurantInfo.longDescription}</p>
+          <p>{restaurantInfo.restaurantAddress}</p>
         </div>
 
+        {/* 특징 */}
         <div className="detail_box">
-          <div className="detail1">
-            <p>can control the spicy taste</p>
-          </div>
-          <div className="detail2">
-            <p>can change vegan</p>
-          </div>
+          {restaurantInfo.features && restaurantInfo.features.length > 0 ? (
+            restaurantInfo.features.map((feature, idx) => (
+              <div key={idx} className={`detail${idx+1}`}>
+                <p>{feature}</p>
+              </div>
+            ))
+          ) : (
+            <p>No special features</p>
+          )}
         </div>
 
+        {/* 메뉴 목록 */}
         <div className="menu_edit">
           <div className="title">
             <p>메뉴 편집</p>
           </div>
           <div className="menu_box">
-            <div className="menu_1">
-              <button><img src={Edit} alt="" /></button>
-              <h3>Beef seaweed soup set</h3>
-              <h4>
-                Seaweed soup with soft beef and<br />
-                thick soup + rice + 3 side dishes.<br />
-                It's not spicy!
-              </h4>
-            </div>
-            <div className="menu_2">
-              <button><img src={Edit} alt="" /></button>
-              <h3>Spicy Pork with Rice</h3>
-              <h4>
-                From spicy and sweet stir-fried<br />
-                pork and savory fried eggs.
-              </h4>
-            </div>
-            <div className="menu_3">
-              <button><img src={Edit} alt="" /></button>
-              <h3>Perilla oil bibimbap</h3>
-              <h4>
-                Korean vegetarian bibimbap mixed<br />
-                with 5 kinds of herbs, rice, perilla<br />
-                oil, and soy sauce.
-              </h4>
-            </div>
-            <div className="menu_4">
-              <button><img src={Edit} alt="" /></button>
-              <h3>Seafood and Tofu Jjigae</h3>
-              <h4>
-                Soft tofu with a mild taste and<br />
-                plenty of shrimp, squid, and clams.
-              </h4>
-            </div>
-            <div className="menu_5">
-              <button><img src={Edit} alt="" /></button>
-              <h3>Kimchi pancake</h3>
-              <h4>
-                A simple brunch set that comes<br />
-                with crispy kimchi pancake and<br />
-                fresh citrus ade.
-              </h4>
-            </div>
+            {menuList.map(menu => (
+              <div key={menu.menuId} className="menu_item">
+                <button><img src={Edit} alt="편집" /></button>
+                <h3>{menu.nameKo}</h3>
+                <h4>{menu.description}</h4>
+                <p>{menu.price.toLocaleString()}원</p>
+              </div>
+            ))}
           </div>
           <div className="bottom">
             <button onClick={() => navigate('/owner_qr')}>
-                    <img src={QRadd} alt="" /></button>
+              <img src={QRadd} alt="추가" />
+            </button>
           </div>
         </div>
       </div>
