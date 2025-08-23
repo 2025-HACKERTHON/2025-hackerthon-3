@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios'; 
 import qr_btn from '../../assets/img/cus_order/qr_btn.svg';
 import starEmpty from '../../assets/img/cus_order/star_empty.png';
 import starFilled from '../../assets/img/cus_order/star_filled.png';
@@ -24,36 +25,35 @@ const Owner_home_fifth = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  const tables = [
-    {
-      num: '테이블 1',
-      menu: ['소고기 미역국 정식 1', '제육볶음 덮밥 1'],
-      cardCount: '주문카드 2장',
-      cards: [
-        { title: '소고기 미역국 정식', desc: '비건 변경을 원해요' },
-        { title: '제육볶음 덮밥', desc: '마늘 빼주세요' },
-      ],
-    },
-    {
-      num: '테이블 2',
-      menu: ['소고기 미역국 정식 1', '제육볶음 덮밥 1'],
-      cardCount: '주문카드 2장',
-      cards: [
-        { title: '소고기 미역국 정식', desc: '맵기 조절 부탁해요' },
-        { title: '제육볶음 덮밥', desc: '밥은 적게 주세요' },
-      ],
-    },
-    {
-      num: '테이블 3',
-      menu: ['소고기 미역국 정식 1', '제육볶음 덮밥 1'],
-      cardCount: '주문카드 2장',
-      cards: [
-        { title: '소고기 미역국 정식', desc: '비건 변경을 원해요' },
-        { title: '제육볶음 덮밥', desc: '마늘 빼주세요' },
-      ],
-    },
-  ];
+  // ✅ API 응답을 화면 구조로 변환
+  const transformToTables = (apiResult = []) =>
+    apiResult.map((row) => {
+      const menu = (row.items ?? []).map((it) => `${it.menuName} ${it.quantity}`);
+      const cardCountNum = (row.items ?? []).reduce(
+        (sum, it) => sum + (Number(it.cardQuantity) || 0),
+        0
+      );
+      const cards = [];
+      (row.items ?? []).forEach((it) => {
+        const names = Array.isArray(it.cardNames) ? it.cardNames : [];
+        names.forEach((name) => {
+          const text = String(name || '').trim();
+          if (text.length > 0) {
+            cards.push({ title: it.menuName, desc: text });
+          }
+        });
+      });
 
+      return {
+        num: `테이블 ${row.tableId}`,
+        menu,
+        cardCount: `주문카드 ${cardCountNum}장`,
+        cards,
+      };
+    });
+
+  // ✅ 하드코드 → API 연동 상태
+  const [tables, setTables] = useState([]);
   const [openSet, setOpenSet] = useState(new Set());
   const toggleOpen = (idx) => {
     setOpenSet((prev) => {
@@ -64,8 +64,50 @@ const Owner_home_fifth = () => {
     });
   };
 
-  // 평균 별점(백엔드 연결 전 기본값 3)
-  const [avgRating] = useState(4);
+  // ✅ 주문 현황 호출 (/api/orders/current) — proxy + 쿠키 전송
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await axios.get('/api/orders/current', {
+          withCredentials: true, // JSESSIONID 자동 전송
+        });
+        const data = res?.data?.result ?? [];
+        setTables(transformToTables(data));
+      } catch (err) {
+        // UI 변경 없이 콘솔만
+        console.error('[orders/current GET error]', {
+          status: err?.response?.status,
+          data: err?.response?.data,
+          err,
+        });
+      }
+    })();
+  }, []);
+
+  // 최신 별점 가져와서 표시 (기본값 4로 시작, 실패 시 그대로 유지)
+  const [avgRating, setAvgRating] = useState(4);
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await axios.get('/api/order-ratings/latest', {
+          withCredentials: true, // JSESSIONID 자동 전송
+        });
+        // 응답 예시 가정: { star: 1~5 }
+        const star = Number(res?.data?.star);
+        if (Number.isFinite(star) && star >= 1 && star <= 5) {
+          setAvgRating(star);
+        }
+      } catch (err) {
+        // UI 변경 없이 콘솔만
+        console.error('[latest rating GET error]', {
+          status: err?.response?.status,
+          data: err?.response?.data,
+          err,
+        });
+      }
+    })();
+  }, []);
+
   const score = Math.max(1, Math.min(5, Math.round(avgRating)));
 
   const TITLE_BY_SCORE = {
@@ -133,7 +175,7 @@ const Owner_home_fifth = () => {
       <div className="trend_section">
         <h1 className="sec_title">최근 주문 경향</h1>
 
-        {/* 평균 별점에 따라 문구/별 이미지 개수 자동 */}
+        {/* 최신 별점 표시 */}
         <div className="rating">
           <div className="rating_text">{TITLE_BY_SCORE[score]}</div>
 
