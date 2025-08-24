@@ -17,7 +17,7 @@ const Signup = () => {
   // 회원가입 요청
   const handleSignup = async () => {
     try {
-      const response = await axios.post('/api/user/register/step1', {
+      const response = await axios.post('http://3.38.135.47:8080/api/user/register/step1', {
         email: email,
         password: password,
         confirmPassword: confirmPassword

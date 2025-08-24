@@ -19,7 +19,7 @@ const Menu_English = () => {
   // ✅ API 호출
   useEffect(() => {
     const userId = 2; // 👉 필요한 userId 넣어주기
-    fetch(`api/store/${userId}/settings/menu_info/lang/en`)
+    fetch(`http://3.38.135.47:8080/api/store/${userId}/settings/menu_info/lang/en`)
       .then(res => res.json())
       .then(data => {
         setRestaurantInfo(data.restaurantInfo);
