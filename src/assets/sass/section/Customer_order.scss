@@ -42,63 +42,78 @@
         }
 
         .menu_section {
+            position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
-            width: 350px;
-            height: 194px;
+            width: 330px;
+            min-height: 140px;
+            height: auto;
+            padding: 18px 20px;
             background-color: var(--white);
-            box-shadow: 0px 0px 7.4px 0px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 0 7.4px rgba(0, 0, 0, 0.1);
             border-radius: 14px;
-            padding: 0px 21px;
-            display: flex;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
 
             .menu_sec {
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
-                margin-top: 20px;
-                gap: 15px;
+                gap: 14px;
+                width: 100%;
+                min-height: 100px;
+                margin-top: 0;
 
                 .menu_left {
                     min-width: 0;
                     flex: 1 1 auto;
-
                     .title {
                         display: block;
-                        font-size: 20px;
+                        font-size: 23px;
                         font-weight: 600;
-                        margin-bottom: 8px;
+                        margin: 0 0 6px 0;
+                        line-height: 1.2;
                     }
 
                     p {
-                        font-size: 16px;
+                        font-size: 15px;
                         font-weight: 400;
+                        line-height: 1.4;
+                        margin: 0;
                     }
                 }
 
                 .menu_right {
+                    position: absolute;
+                    top: 18px;
+                    right: 14px;
+
                     white-space: nowrap;
-                    flex: 0 0 56px;
                     width: 56px;
                     height: 31px;
+                    flex: 0 0 56px;
+
                     background-color: var(--blue01);
                     color: var(--white);
                     border-radius: 40px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    margin-top: -50px;
-                    margin-left: 0;
-                    box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.1);
+
+                    margin: 0;
+                    /* 기존 -50px 제거 */
+                    box-shadow: 0 4px 4px rgba(0, 0, 0, 0.1);
                 }
             }
 
+            /* 버튼은 카드 폭에 맞춰 가득, 높이도 살짝 줄임 */
             .add_cards {
-                margin-top: 35px;
-                width: 322px;
-                height: 49px;
+                margin-top: 12px;
+                /* 35 → 12 */
+                width: 100%;
+                /* 322px → 카드 너비 꽉 채움 */
+                height: 44px;
+                /* 49 → 44 */
                 border-radius: 8px;
                 display: flex;
                 align-items: center;

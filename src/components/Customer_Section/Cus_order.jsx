@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+// src/components/Customer_Section/Cus_order.jsx
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-
+import { useNavigate, Link } from 'react-router-dom';
 import back_btn from '../../assets/img/cus_order/back_btn.svg';
 import qr_btn from '../../assets/img/cus_order/qr_btn.svg';
 import trans_btn from '../../assets/img/cus_order/trans_btn.svg';
@@ -12,154 +12,291 @@ import starFilled from '../../assets/img/cus_order/star_filled.png';
 const Cus_order = () => {
   const navigate = useNavigate();
 
-  // 모달/별점 상태
   const [isDoneOpen, setIsDoneOpen] = useState(false);
   const [isRatingOpen, setIsRatingOpen] = useState(false);
   const [isThanksOpen, setIsThanksOpen] = useState(false);
   const [rating, setRating] = useState(0);
 
-  // 주문 저장 응답의 주문 ID
   const [orderId, setOrderId] = useState(null);
+  const [items, setItems] = useState([]);
+  const [menuIndex, setMenuIndex] = useState({});
 
-  // ✅ 카드에 뿌릴 텍스트(기본은 전부 빈 문자열)
-  const [displayCards, setDisplayCards] = useState([
-    { title: '', desc: '', qty: '' }, // 카드 #1
-    { title: '', desc: '', qty: '' }, // 카드 #2
-  ]);
+  // 장바구니 로드: 기본은 orderDraft_v1, 비어있으면 캐시(orderDraft_items_cache)로 복구
+  const getCartPayload = () => {
+    try {
+      const raw = localStorage.getItem('orderDraft_v1');
+      const parsed = raw ? JSON.parse(raw) : null;
 
-  // axios 인스턴스 (세션 쿠키 전송)
-  const api = axios.create({
-    withCredentials: true,                         // JSESSIONID 자동 전송
-    headers: { 'Content-Type': 'application/json' }
-  });
+      const tableId = parsed?.tableId ?? parsed?.selectedTableId ?? 1;
+      const userId  = parsed?.userId ?? 1;
 
-  // 옵션 페이지로 이동
-  const goToOptions = () => navigate('/cus_options');
+      let loadedItems = Array.isArray(parsed?.items) ? parsed.items : [];
 
-  // 모달 열릴 때만 스크롤 락
+      // items가 없거나 빈 배열이면 캐시에서 복구
+      if (!loadedItems || loadedItems.length === 0) {
+        const cacheRaw = localStorage.getItem('orderDraft_items_cache');
+        if (cacheRaw) {
+          const cache = JSON.parse(cacheRaw);
+          if (Array.isArray(cache)) loadedItems = cache;
+          else if (Array.isArray(cache?.items)) loadedItems = cache.items;
+        }
+      }
+
+      return { items: loadedItems || [], tableId, userId };
+    } catch {
+      // 완전 실패 시에도 캐시 시도
+      try {
+        const cacheRaw = localStorage.getItem('orderDraft_items_cache');
+        const cache = cacheRaw ? JSON.parse(cacheRaw) : [];
+        const loadedItems = Array.isArray(cache) ? cache : (Array.isArray(cache?.items) ? cache.items : []);
+        return { items: loadedItems || [], tableId: 1, userId: 1 };
+      } catch {
+        return { items: [], tableId: 1, userId: 1 };
+      }
+    }
+  };
+
+  // 장바구니를 다시 읽어와 상태 반영
+  const loadFromStorage = () => {
+    const { items: saved } = getCartPayload();
+    setItems(saved || []);
+    const lastOrderId = localStorage.getItem('lastOrderId');
+    if (lastOrderId) setOrderId(parseInt(lastOrderId, 10) || null);
+  };
+
+  // 최초 1회 로드
+  useEffect(() => {
+    loadFromStorage();
+  }, []);
+
+  // 같은 탭 내에서 페이지 복귀/포커스 시에도 항상 재로딩
+  useEffect(() => {
+    const onFocus = () => loadFromStorage();
+    const onPageShow = () => loadFromStorage();
+    const onStorage = (e) => {
+      if (e.key === 'orderDraft_v1' || e.key === 'orderDraft_items_cache') {
+        loadFromStorage();
+      }
+    };
+    window.addEventListener('focus', onFocus);
+    window.addEventListener('pageshow', onPageShow);
+    window.addEventListener('storage', onStorage);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('pageshow', onPageShow);
+      window.removeEventListener('storage', onStorage);
+    };
+  }, []);
+
+  // items 스냅샷을 캐시에 저장해 두어 옵션 선택 후에도 복구 가능하게 함
+  useEffect(() => {
+    try {
+      if (Array.isArray(items)) {
+        localStorage.setItem('orderDraft_items_cache', JSON.stringify(items));
+      }
+    } catch {}
+  }, [items]);
+
+  // 메뉴 메타 인덱스
+  useEffect(() => {
+    (async () => {
+      try {
+        const userId = 1;
+        const res = await axios.get(`/api/store/${userId}/all`);
+        const menusRaw = res?.data?.menus;
+        const menus = Array.isArray(menusRaw) ? menusRaw : Object.values(menusRaw || {});
+        const index = {};
+        menus.forEach(m => {
+          if (!m) return;
+          const key = (m.nameKo || '').trim();
+          if (!key) return;
+          index[key] = {
+            id: Number(m.menuId ?? m.id),
+            price: m.price != null ? Number(m.price) : undefined,
+          };
+        });
+        setMenuIndex(index);
+      } catch {}
+    })();
+  }, []);
+
+  // 모달 열림시 스크롤 락
   useEffect(() => {
     const lock = isDoneOpen || isRatingOpen || isThanksOpen;
     document.body.style.overflow = lock ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [isDoneOpen, isRatingOpen, isThanksOpen]);
 
-  // 주문완료 → 별점 모달
-  const openRating = () => {
-    setIsDoneOpen(false);
-    setRating(0);
-    setIsRatingOpen(true);
-  };
-
-  // 별점 선택
+  const openRating = () => { setIsDoneOpen(false); setRating(0); setIsRatingOpen(true); };
   const selectStar = (n) => setRating(n);
 
-  // ✅ 현재 주문(장바구니) 불러와 카드 텍스트 채우기: /api/orders/current
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await api.get('/api/orders/current');
-        // 응답 예시: { result:[ { items:[ {menuName, quantity, cardNames:[...]} ] } ] }
-        const data = res?.data;
-        const items =
-          Array.isArray(data?.result) && data.result[0]?.items
-            ? data.result[0].items
-            : (Array.isArray(data?.items) ? data.items : []);
+  const totalCount = useMemo(
+    () => items.reduce((a, it) => a + (it.quantity || 0), 0),
+    [items]
+  );
+  const totalPrice = useMemo(() => {
+    if (items.length === 0) return 0;
+    if (items.some(it => it.price == null)) return null;
+    return items.reduce((a, it) => a + (Number(it.price) * (it.quantity || 0)), 0);
+  }, [items]);
 
-        // 최대 2장만 UI에 맵핑(부족하면 빈값 유지)
-        const next = [0, 1].map((i) => {
-          const it = items?.[i];
-          if (!it) return { title: '', desc: '', qty: '' };
-          const title = it.menuName || '';
-          const qty   = Number(it.quantity) ? String(it.quantity) : '';
-          // cardNames 배열에서 공백 제거 후 합치기 (요청사항)
-          const desc  = Array.isArray(it.cardNames)
-            ? it.cardNames.map(v => String(v || '').trim()).filter(Boolean).join(', ')
-            : String(it.cardNames || '').trim();
-          return { title, desc, qty };
-        });
+  // 사장님 화면용 로컬 브릿지 추가
+  function pushOwnerFeedEntry(createdOrderId) {
+    const { tableId } = getCartPayload();
+    const tableNo = Number(tableId || 1);
 
-        setDisplayCards(next);
-      } catch (err) {
-        console.error('[cart load error]', {
-          status: err?.response?.status,
-          data: err?.response?.data,
-          err,
-        });
-        // 실패 시 그대로 빈 카드 유지
-        setDisplayCards([
-          { title: '', desc: '', qty: '' },
-          { title: '', desc: '', qty: '' },
-        ]);
-      }
-    })();
-  }, []);
+    const menuLines = items.map(it => {
+      const name = it.nameKo || it.menuName || '메뉴';
+      const qty = it.quantity || 0;
+      return `${name} ${qty}`;
+    });
 
-  // ====== (2) 손님 주문저장: POST /api/orders?userId=1 ======
-  const saveOrder = async () => {
-    try {
-      const payload = {
-        tableId: 3,
-        items: [
-          {
-            menuId: 1,
-            quantity: 2,
-            price: 12000,
-            language: 'KO',
-            cardQuantity: 1,
-            cardNames: '고수 빼주세요',
-          },
-          {
-            menuId: 2,
-            quantity: 1,
-            price: 8000,
-            language: 'KO',
-            cardQuantity: 0,
-            cardNames: '',
-          },
-        ],
-      };
-
-      const res = await api.post('/api/orders', payload, { params: { userId: 1 } });
-      const createdId = res?.data?.id;
-      if (createdId) setOrderId(createdId);
-
-      setIsDoneOpen(true);
-      console.log('[order save OK]', res?.status, res?.data);
-    } catch (err) {
-      console.error('[order save error]', {
-        status: err?.response?.status,
-        data: err?.response?.data,
-        err,
+    const cards = [];
+    let cardTotal = 0;
+    items.forEach(it => {
+      const name = it.nameKo || it.menuName || '메뉴';
+      const raw = Array.isArray(it.cardNames) ? it.cardNames : (it.cardNames ? String(it.cardNames).split(',') : []);
+      const trimmed = raw.map(s => String(s).trim()).filter(Boolean);
+      cardTotal += trimmed.length;
+      trimmed.forEach(desc => {
+        cards.push({ title: name, desc });
       });
+    });
+
+    const entry = {
+      id: createdOrderId || `local-${Date.now()}`,
+      tableId: tableNo,
+      num: `테이블 ${tableNo}`,
+      menu: menuLines,
+      cardCount: `주문카드 ${cardTotal}장`,
+      cards,
+      createdAt: new Date().toISOString()
+    };
+
+    try {
+      const raw = localStorage.getItem('owner_live_orders');
+      const arr = raw ? JSON.parse(raw) : [];
+      const next = [entry, ...arr].slice(0, 50);
+      localStorage.setItem('owner_live_orders', JSON.stringify(next));
+      window.dispatchEvent(new StorageEvent('storage', { key: 'owner_live_orders' }));
+    } catch {}
+  }
+
+  // 메뉴 인덱스가 비어있을 때 1회 보강
+  const ensureMenuIndex = async () => {
+    if (Object.keys(menuIndex || {}).length > 0) return;
+    try {
+      const userId = 1;
+      const res = await axios.get(`/api/store/${userId}/all`);
+      const menusRaw = res?.data?.menus;
+      const menus = Array.isArray(menusRaw) ? menusRaw : Object.values(menusRaw || {});
+      const index = {};
+      menus.forEach((m) => {
+        const key = (m?.nameKo || '').trim();
+        if (!key) return;
+        index[key] = {
+          id: Number(m.menuId ?? m.id),
+          price: m.price != null ? Number(m.price) : undefined,
+        };
+      });
+      setMenuIndex(index);
+    } catch {}
+  };
+
+  // 주문하기: 페이로드 정규화로 400 방지
+  const handleOrder = async () => {
+    setIsDoneOpen(true);
+
+    await ensureMenuIndex();
+
+    const { tableId, userId } = getCartPayload();
+
+    const normalized = (items || [])
+      .map((it) => {
+        const name = (it.nameKo || it.menuName || '').trim();
+        const idxInfo = name ? menuIndex[name] : undefined;
+
+        const menuId   = Number(it.menuId ?? it.id ?? idxInfo?.id);
+        const quantity = Number(it.quantity ?? 0);
+        const price    = Number(it.price ?? idxInfo?.price);
+
+        const cardArr  = Array.isArray(it.cardNames)
+          ? it.cardNames
+          : (typeof it.cardNames === 'string'
+              ? it.cardNames.split(',').map((s) => s.trim()).filter(Boolean)
+              : []);
+
+        return {
+          menuId,
+          quantity,
+          price,
+          language: String(it.language || 'KO').toUpperCase(),
+          cardQuantity: Number.isFinite(it.cardQuantity) ? Number(it.cardQuantity) : cardArr.length,
+          cardNames: cardArr.join(', '),
+        };
+      })
+      .filter(
+        (r) =>
+          Number.isFinite(r.menuId) && r.menuId > 0 &&
+          Number.isFinite(r.quantity) && r.quantity > 0 &&
+          Number.isFinite(r.price) && r.price > 0
+      );
+
+    if (normalized.length === 0) {
+      pushOwnerFeedEntry(null);
+      return;
+    }
+
+    const body = {
+      tableId: Number(tableId || 1),
+      items: normalized,
+    };
+
+    try {
+      const res = await axios.post('/api/orders', body, {
+        params: { userId: Number(userId || 1) },
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        withCredentials: true,
+      });
+      const createdId = res?.data?.id;
+      if (createdId) {
+        setOrderId(createdId);
+        localStorage.setItem('lastOrderId', String(createdId));
+      }
+      pushOwnerFeedEntry(createdId);
+    } catch {
+      pushOwnerFeedEntry(null);
     }
   };
 
-  // ====== (1) 손님 주문평가 저장: POST /api/order-ratings ======
-  const saveOrderRating = async () => {
-    if (!orderId || rating === 0) return;
-    try {
-      const payload = { orderId, star: rating };
-      const res = await api.post('/api/order-ratings', payload);
+  const handleSubmitRating = async () => {
+    if (!rating) return;
 
+    if (!orderId) {
       setIsRatingOpen(false);
       setIsThanksOpen(true);
-      console.log('[order-rating save OK]', res?.status, res?.data);
-    } catch (err) {
-      console.error('[order-rating save error]', {
-        status: err?.response?.status,
-        data: err?.response?.data,
-        err,
-      });
-      // 서버 직렬화 에러가 계속되면 서버 DTO 반환으로 수정 필요
+      return;
     }
+
+    try {
+      await axios.post('/api/order-ratings', { orderId, star: rating });
+      setIsRatingOpen(false);
+      setIsThanksOpen(true);
+    } catch {
+      setIsRatingOpen(false);
+      setIsThanksOpen(true);
+    }
+  };
+
+  // 각 메뉴별 옵션 편집으로 이동(해당 아이템 index 전달)
+  const goToOptions = (itemIndex) => {
+    navigate('/cus_options', { state: { itemIndex } });
   };
 
   return (
     <div className='cusorder_wrap container'>
       <div className="header">
-       <Link to='/'>
-        <button className="back_btn"><img src={back_btn} alt="" /></button>
-       </Link>
+        <Link to='/'><button className="back_btn"><img src={back_btn} alt="" /></button></Link>
         <div className="right_btns">
           <button className="qr"><img src={qr_btn} alt="" /></button>
           <button className="trans"><img src={trans_btn} alt="" /></button>
@@ -169,63 +306,64 @@ const Cus_order = () => {
       <div className="co_main">
         <h1>ORDER</h1>
 
-        {/* ✅ 카드 #1 — 기본 디자인 유지, 텍스트만 API로 채움(없으면 빈칸) */}
-        <div className="menu_section">
-          <div className="menu_sec">
-            <div className="menu_left">
-              <span className="title">{displayCards[0].title}</span>
-              {displayCards[0].desc && (
-                <p>{displayCards[0].desc}</p>
-              )}
-            </div>
-            <div className="menu_right">
-              {displayCards[0].qty && `${displayCards[0].qty}개`}
-            </div>
+        {items.length === 0 ? (
+          <div className="empty_cart">
+            <p>담긴 주문이 없습니다.</p>
+            <button className="add_cards" onClick={() => navigate('/')}>메뉴 보러가기</button>
           </div>
-          <button className="add_cards" onClick={goToOptions}>주문카드 추가하기</button>
-        </div>
+        ) : (
+          <>
+            {items.map((it, idx) => (
+              <div className="menu_section" key={it.id || it.menuId || `${it.nameKo}-${idx}`}>
+                <div className="menu_sec">
+                  <div className="menu_left">
+                    <span className="title">{it.nameKo || it.menuName || `메뉴 ${idx + 1}`}</span>
+                    {it.description && (
+                      <p
+                        dangerouslySetInnerHTML={{
+                          __html: String(it.description).replace(/\n/g, '<br />'),
+                        }}
+                      />
+                    )}
+                    {it.price != null && (
+                      <div className="price_each">{Number(it.price).toLocaleString()}원</div>
+                    )}
+                  </div>
+                  <div className="menu_right">{it.quantity || 0}개</div>
+                </div>
 
-        {/* ✅ 카드 #2 — 동일 방식 */}
-        <div className="menu_section">
-          <div className="menu_sec">
-            <div className="menu_left">
-              <span className="title">{displayCards[1].title}</span>
-              {displayCards[1].desc && (
-                <p>{displayCards[1].desc}</p>
-              )}
+                {/* 옵션 편집 버튼 */}
+                <button className="add_cards" onClick={() => goToOptions(idx)}>
+                  주문카드 추가하기
+                </button>
+              </div>
+            ))}
+
+            <div className="total">
+              <span className="how">총 가격</span>
+              <span className="price">
+                {totalPrice == null ? '-' : totalPrice.toLocaleString()}
+              </span>
             </div>
-            <div className="menu_right">
-              {displayCards[1].qty && `${displayCards[1].qty}개`}
+
+            <div className="total_2">
+              <span className="how">주문카드 </span>
+              <span className="price">{totalCount}개</span>
             </div>
-          </div>
-          <button className="add_cards" onClick={goToOptions}>주문카드 추가하기</button>
-        </div>
 
-        <button className="add_order">주문 추가하기</button>
-
-        <div className="total">
-          <span className="how">총 가격</span>
-          <span className="price">33,000</span>
-        </div>
-
-        <div className="total_2">
-          <span className="how">주문카드 </span>
-          <span className="price">2개</span>
-        </div>
-
-        {/* 주문하기 → 주문 저장 API 호출 후 주문완료 모달 */}
-        <div
-          className="go_order"
-          role="button"
-          tabIndex={0}
-          onClick={saveOrder}
-          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && saveOrder()}
-        >
-          주문하기
-        </div>
+            <div
+              className="go_order"
+              role="button"
+              tabIndex={0}
+              onClick={handleOrder}
+              onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleOrder()}
+            >
+              주문하기
+            </div>
+          </>
+        )}
       </div>
 
-      {/* 주문완료 모달: 어디든 클릭 → 별점 모달 */}
       {isDoneOpen && (
         <div className="card_overlay" onClick={openRating} aria-modal="true" role="dialog">
           <div className="m_wrap" onClick={openRating}>
@@ -236,7 +374,6 @@ const Cus_order = () => {
         </div>
       )}
 
-      {/* 별점 모달 */}
       {isRatingOpen && (
         <div
           className="card_overlay"
@@ -250,24 +387,19 @@ const Cus_order = () => {
 
               <div className="stars" role="group" aria-label="별점 선택">
                 {[1, 2, 3, 4, 5].map((n) => {
-                  const isFilled = rating >= n;
+                  const filled = rating >= n;
                   return (
                     <button
                       key={n}
                       type="button"
-                      className={`star ${isFilled ? 'filled' : ''}`}
+                      className={`star ${filled ? 'filled' : ''}`}
                       aria-label={`${n}점`}
                       onClick={() => selectStar(n)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') selectStar(n);
-                        if (e.key === 'ArrowLeft') selectStar(Math.max(0, rating - 1));
-                        if (e.key === 'ArrowRight') selectStar(Math.min(5, rating + 1));
-                      }}
                     >
                       <img
                         className="star_img"
-                        src={isFilled ? starFilled : starEmpty}
-                        alt={isFilled ? '채워진 별' : '빈 별'}
+                        src={filled ? starFilled : starEmpty}
+                        alt=""
                         draggable="false"
                       />
                     </button>
@@ -281,7 +413,7 @@ const Cus_order = () => {
             <button
               className={`confirm_btn rate_btn_outside ${rating > 0 ? 'active' : ''}`}
               disabled={rating === 0}
-              onClick={saveOrderRating}
+              onClick={handleSubmitRating}
             >
               평가 완료
             </button>
@@ -289,7 +421,6 @@ const Cus_order = () => {
         </div>
       )}
 
-      {/* 감사 모달 */}
       {isThanksOpen && (
         <div
           className="card_overlay"
