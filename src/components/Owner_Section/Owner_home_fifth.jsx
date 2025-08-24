@@ -296,7 +296,7 @@ const Owner_home_fifth = () => {
   };
 
   return (
-    <div className='ownerhomefifth_wrap container'>
+    <div id='ownerhomefifth_wrap' className='container'>
       <div className="header">
         <button className="qr"><img src={qr_btn} alt="" /></button>
       </div>
@@ -307,8 +307,9 @@ const Owner_home_fifth = () => {
         <div className="on">운영중</div>
       </div>
 
+      <h1 className='title'> 실시간 주문 현황</h1>
       <div className="table_list">
-        <h1>실시간 주문 현황</h1>
+        
 
         {tables.map((t, idx) => (
           <div

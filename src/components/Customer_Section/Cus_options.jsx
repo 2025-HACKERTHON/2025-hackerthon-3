@@ -105,7 +105,7 @@ const Cus_options = () => {
   };
 
   return (
-    <div className='cusoptions_wrap container'>
+    <div id='cusoptions_wrap'  className='container'>
       <div className="header">
         <button className="back_btn" onClick={() => navigate('/cus_order')}>
           <img src={back_btn} alt="뒤로가기" />

@@ -216,7 +216,7 @@ const Owner_home_second = () => {
   const bubble3 = bestMenus[2] || '김치전';
 
   return (
-    <div className='ownerhomes_wrap container'>
+    <div id='ownerhomes_wrap' className='container'>
       <div className="header">
         <button className="qr"><img src={qr_btn} alt="" /></button>
       </div>
