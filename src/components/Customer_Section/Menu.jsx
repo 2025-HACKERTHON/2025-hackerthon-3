@@ -69,7 +69,9 @@ const Menu = () => {
             <img src={main} alt="" className="main" />
             <header>
               <div className="header_icon">
-                <img src={qr} arlt="" />
+                <Link to='/qr'>
+                    <img src={qr} alt="" />
+                </Link>
                 <img src={language} alt="" />
               </div>
               <div className="header">
