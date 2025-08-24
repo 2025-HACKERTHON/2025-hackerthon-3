@@ -52,7 +52,7 @@
         }
     }
 
-    .title{
+    .title {
         font-size: 20px;
         font-weight: 600;
         color: var(--blue01);
@@ -61,9 +61,14 @@
     }
 
     .table_list {
-        display: flex;
-        align-items: center;
-        flex-direction: column;
+        padding: 0 22px;
+
+        h1 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--blue01);
+            margin-top: 27px;
+        }
 
         .table {
             margin-top: 15px;
@@ -183,7 +188,7 @@
             justify-content: center;
             color: var(--blue02);
 
-            .title {
+            .card_title {
                 font-size: 20px;
                 font-weight: 600;
                 line-height: 1.3;
