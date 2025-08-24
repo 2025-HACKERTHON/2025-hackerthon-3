@@ -6,6 +6,7 @@ import header from '../../assets/img/cus_menu/header.png'
 import cart from '../../assets/img/cus_menu/cart.svg'
 import { Link } from 'react-router-dom'
 import NumberSelector from './Menu_Table'
+import { useMemo } from 'react'
 
 const Menu = () => {
 
@@ -128,7 +129,7 @@ const Menu = () => {
               <div id="icon" className="cart_icon">
                 <div className="cart">
                   <img src={cart} alt="" />
-                  <div className="cart_count">1</div>
+                    {/* <div className="cart_count">1</div> */}
                 </div>
               </div>
               </Link>

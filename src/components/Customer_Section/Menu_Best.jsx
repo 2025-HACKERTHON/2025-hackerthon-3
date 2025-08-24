@@ -168,7 +168,7 @@ const Menu_Best = () => {
                     <div id="icon" className="cart_icon">
                         <div className="cart">
                             <img src={cart} alt="" />
-                        <div className="cart_count">1</div>
+                        {/* <div className="cart_count">1</div> */}
                         </div>
                     </div>
                 </Link>
