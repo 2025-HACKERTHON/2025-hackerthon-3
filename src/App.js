@@ -16,6 +16,7 @@ import Menu_Language from './components/Customer_Section/Menu_Language'
 import Menu_Table from './components/Customer_Section/Menu_Table'
 import Cus_options from './components/Customer_Section/Cus_options'
 import Cus_order from './components/Customer_Section/Cus_order'
+import Owner_home_first from './components/Owner_Section/Owner_home_first'
 
 const App = () => {
   return (
@@ -37,6 +38,7 @@ const App = () => {
       <Route path='/menu_table' element={<Menu_Table />} />
       <Route path='/cus_order' element={<Cus_order />} />
       <Route path='/cus_options' element={<Cus_options />} />
+      <Route path='/owner_home_first' element={<Owner_home_first />} />
     </Routes>
     </BrowserRouter>
   )

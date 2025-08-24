@@ -24,19 +24,19 @@ const Store_info = () => {
     );
   };
 
-  // ✅ API 호출
+  // ✅ API 호출 + 화면 이동 처리
   const handleSubmit = async () => {
-    try {
-      const userId = 5; // 🔹 실제 로그인된 userId로 교체
-      const requestData = {
-        restaurantName,
-        restaurantAddress,
-        shortDescription,
-        longDescription,
-        tableCount: count,
-        features, // 배열 그대로 전송
-      };
+    const userId = 5; // 실제 로그인된 userId로 교체
+    const requestData = {
+      restaurantName,
+      restaurantAddress,
+      shortDescription,
+      longDescription,
+      tableCount: count,
+      features,
+    };
 
+    try {
       const response = await axios.post(
         `http://3.38.135.47:8080/api/user/register/step2/${userId}`,
         requestData,
@@ -47,10 +47,12 @@ const Store_info = () => {
 
       console.log("서버 응답:", response.data);
       alert("가게 정보가 등록되었습니다!");
-      navigate('/owner_home_first'); // 성공 시 이동
     } catch (error) {
       console.error("가게 등록 실패:", error);
-      alert("등록 중 오류가 발생했습니다.");
+      alert("등록 중 오류가 발생했지만, 화면 이동은 계속합니다.");
+    } finally {
+      // ✅ API 성공 여부와 상관없이 화면 이동
+      navigate('/owner_home_first');
     }
   };
 
