@@ -1,5 +1,5 @@
 // src/components/Owner_Section/Owner_home_third.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import qr_btn from '../../assets/img/cus_order/qr_btn.svg';
@@ -38,6 +38,23 @@ const Owner_home_third = () => {
   // 전역 인터셉터 영향을 피하기 위한 로컬 axios 인스턴스
   const api = axios.create({ withCredentials: true });
 
+  // 폴링 제어 상수
+  const BASE_INTERVAL_MS = 8000;      // 기본 폴링 주기
+  const MAX_INTERVAL_MS = 60000;      // 최대 백오프 주기
+  const CN_MIN_INTERVAL_MS = 30000;   // 중국 베스트 3 최소 재조회 간격
+
+  // 폴링 제어 ref
+  const pollTimerRef = useRef(null);
+  const inFlightRef = useRef(false);
+  const backoffRef = useRef(BASE_INTERVAL_MS);
+  const ordersEtagRef = useRef(null);
+  const ordersAbortRef = useRef(null);
+  const lastChinaAtRef = useRef(0);
+
+  // 화면 상태
+  const [tables, setTables] = useState([]);
+  const [bestMenus, setBestMenus] = useState([]);
+
   // 세션 쿠키 존재 여부(세션 방식일 때만 사용)
   const hasSession = () => {
     try {
@@ -47,7 +64,7 @@ const Owner_home_third = () => {
     }
   };
 
-  // ---------- 공통 유틸(First 화면과 동일 컨셉) ----------
+  // 로컬에 저장된 최근 테이블 번호
   const getFallbackTableId = () => {
     try {
       const raw = localStorage.getItem('orderDraft_v1');
@@ -60,19 +77,22 @@ const Owner_home_third = () => {
     } catch { return null; }
   };
 
+  // 표시용 테이블 번호: 서버 값이 정상이면 그대로, 아니면 로컬 fallback
   const computeDisplayTableId = (raw) => {
     const n = Number(raw);
-    if (Number.isFinite(n) && n > 0) return n; // 서버 우선
+    if (Number.isFinite(n) && n > 0) return n;
     const fallback = getFallbackTableId();
     return fallback ?? 1;
   };
 
+  // 서버 응답에서 카드명 배열 정규화
   const normalizeCardNames = (raw) => {
     if (Array.isArray(raw)) return raw.map(s => String(s || '').trim()).filter(Boolean);
     if (typeof raw === 'string') return raw.split(',').map(s => s.trim()).filter(Boolean);
     return [];
   };
 
+  // 고유 시그니처
   const orderSignatureFromApi = (o) => {
     const tableId = o?.tableId ?? '';
     const items = Array.isArray(o?.items) ? o.items : [];
@@ -110,16 +130,19 @@ const Owner_home_third = () => {
       const set = readHiddenSigs();
       set.add(sig);
       localStorage.setItem('owner_hidden_sigs', JSON.stringify(Array.from(set)));
-      // 로컬 브릿지에도 반영(있다면 제거)
+
+      // 로컬 브릿지에서도 제거
       const raw = localStorage.getItem('owner_live_orders');
       const arr = raw ? JSON.parse(raw) : [];
       const filtered = arr.filter((e) => orderSignatureFromTable(e) !== sig);
       localStorage.setItem('owner_live_orders', JSON.stringify(filtered));
-      // 스토리지 이벤트로 다른 탭/컴포넌트 갱신
+
+      // 다른 탭 갱신 유도
       window.dispatchEvent(new StorageEvent('storage', { key: 'owner_hidden_sigs' }));
     } catch {}
   };
 
+  // 메뉴별 1장으로 집계
   const aggregateCardsByMenu = (pairs) => {
     const grouped = {};
     pairs.forEach(({ title, desc }) => {
@@ -134,10 +157,6 @@ const Owner_home_third = () => {
       desc: Array.from(new Set(arr)).join(', '),
     }));
   };
-
-  // ---------- 상태 ----------
-  const [tables, setTables] = useState([]);
-  const [bestMenus, setBestMenus] = useState([]);
 
   // 서버 → 화면 모델
   function transformOrders(apiList) {
@@ -171,7 +190,7 @@ const Owner_home_third = () => {
         menu: menuLines,
         cardCount: `주문카드 ${cardTotal}장`,
         cards,
-        id: `srv-${tableId}-${sig}`,       // 안정적 ID (재로딩시 깜빡임 방지)
+        id: `srv-${tableId}-${sig}`,
         createdAt: new Date().toISOString()
       };
     });
@@ -215,88 +234,179 @@ const Owner_home_third = () => {
     );
   };
 
-  // 현재 주문 로드: 세션 없으면 로컬, 있으면 서버 시도 후 실패 시 로컬
-  async function loadOwnerOrders() {
+  // 주문 로드 1회 수행: 세션 없으면 로컬, 있으면 서버 시도 후 실패 시 로컬
+  async function loadOwnerOrdersOnce() {
     const hidden = readHiddenSigs();
-    if (!hasSession()) {
-      setTables(mergeBySignature([], readLocalOrders(), hidden));
-      return;
-    }
-    try {
-      const res = await api.get('/api/orders/current');
-      const arr = res?.data || [];
-      // 디버그 확인용(필요시만)
-      // console.groupCollapsed('[third] /api/orders/current 응답'); console.log(arr); console.groupEnd();
 
+    // 중복 요청 방지
+    if (inFlightRef.current) return true;
+    inFlightRef.current = true;
+
+    // 이전 요청 취소
+    if (ordersAbortRef.current) ordersAbortRef.current.abort();
+    const controller = new AbortController();
+    ordersAbortRef.current = controller;
+
+    try {
+      // 세션 없으면 서버 호출 생략
+      if (!hasSession()) {
+        setTables(mergeBySignature([], readLocalOrders(), hidden));
+        backoffRef.current = BASE_INTERVAL_MS;
+        return true;
+      }
+
+      const headers = {};
+      if (ordersEtagRef.current) headers['If-None-Match'] = ordersEtagRef.current;
+
+      const res = await api.get('/api/orders/current', {
+        headers,
+        signal: controller.signal,
+        validateStatus: (s) => (s >= 200 && s < 300) || s === 304,
+      });
+
+      const et = res.headers?.etag || res.headers?.ETag;
+      if (et) ordersEtagRef.current = et;
+
+      if (res.status === 304) {
+        // 변경 없음
+        backoffRef.current = BASE_INTERVAL_MS;
+        return true;
+      }
+
+      const arr = Array.isArray(res?.data) ? res.data : (Array.isArray(res?.data?.result) ? res.data.result : []);
       const srv = transformOrders(arr);
       const loc = readLocalOrders();
       setTables(mergeBySignature(srv, loc, hidden));
+
+      backoffRef.current = BASE_INTERVAL_MS;
+      return true;
     } catch {
+      // 실패 시 로컬 폴백, 백오프 증가
       setTables(mergeBySignature([], readLocalOrders(), hidden));
+      backoffRef.current = Math.min(Math.max(backoffRef.current * 2, BASE_INTERVAL_MS), MAX_INTERVAL_MS);
+      return false;
+    } finally {
+      inFlightRef.current = false;
     }
   }
 
-  // 중국 베스트 메뉴 3개 로드
-  async function loadChinaTop3() {
-    if (!hasSession()) {
-      setBestMenus([]);
-      return;
-    }
+  // 중국 베스트 메뉴 3개: 최소 간격 보장
+  async function loadChinaTop3Once() {
+    const now = Date.now();
+    if (now - lastChinaAtRef.current < CN_MIN_INTERVAL_MS) return;
+    lastChinaAtRef.current = now;
+
     try {
-      // /api/statistics/menus/top3/{userId}/{language}
       const res = await api.get('/api/statistics/menus/top3/1/CHA');
-      const arr = Array.isArray(res?.data) ? res.data : [];
-      // console.log('[third] top3/CHA 응답', arr); // 확인용
+      const arr = Array.isArray(res?.data) ? res.data : (Array.isArray(res?.data?.result) ? res.data.result : []);
       setBestMenus(arr.map(s => String(s || '').trim()).filter(Boolean).slice(0, 3));
     } catch {
-      setBestMenus([]);
+      // 실패 시 기존 값 유지
     }
   }
 
+  // 가시성 기반 폴링 루프
+  const scheduleNext = (delay) => {
+    if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+    pollTimerRef.current = setTimeout(runLoopOnce, delay);
+  };
+
+  const runLoopOnce = async () => {
+    if (document.visibilityState !== 'visible') {
+      return; // 숨겨진 상태면 폴링 중단
+    }
+    const ok = await loadOwnerOrdersOnce();
+    loadChinaTop3Once();
+    scheduleNext(ok ? BASE_INTERVAL_MS : backoffRef.current);
+  };
+
   useEffect(() => {
-    // 최초 로드
-    loadOwnerOrders();
-    loadChinaTop3();
+    // 최초 실행
+    runLoopOnce();
 
-    // 주기 갱신
-    const iv = setInterval(() => {
-      loadOwnerOrders();
-      loadChinaTop3();
-    }, 1500);
+    // 가시성 변화에 따른 시작/정지
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        runLoopOnce();
+      } else {
+        if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+        if (ordersAbortRef.current) ordersAbortRef.current.abort();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
 
-    // 로컬스토리지 브릿지 이벤트 대응 (숨김/로컬 변경 모두)
+    // 포커스/페이지쇼 시 즉시 한 번
+    const onFocus = () => runLoopOnce();
+    const onPageShow = () => runLoopOnce();
+    window.addEventListener('focus', onFocus);
+    window.addEventListener('pageshow', onPageShow);
+
+    // 로컬스토리지 트리거는 디바운스 후 반영
+    let storageT;
     const onStorage = (ev) => {
       if (
         ev.key === 'owner_live_orders' ||
         ev.key === 'owner_hidden_sigs' ||
         ev.key === 'orderDraft_v1'
       ) {
-        loadOwnerOrders();
+        if (storageT) clearTimeout(storageT);
+        storageT = setTimeout(() => runLoopOnce(), 200);
       }
     };
     window.addEventListener('storage', onStorage);
 
     return () => {
-      clearInterval(iv);
+      if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+      if (ordersAbortRef.current) ordersAbortRef.current.abort();
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('pageshow', onPageShow);
       window.removeEventListener('storage', onStorage);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 버블 차트 라벨 기본값(빈 응답 대비)
+  // 버블 차트 라벨 기본값
   const bubble1 = bestMenus[0] || '소고기 미역국 정식';
   const bubble2 = bestMenus[1] || '제육볶음 덮밥';
   const bubble3 = bestMenus[2] || '김치전';
 
+  // 상단 import/변수들 아래에 추가
+const [storeName, setStoreName] = useState('가게명');
+const userId = 1; // Menu_Edit에서 쓰는 것과 동일하게 맞추세요
+
+useEffect(() => {
+  // 1) 로컬 우선 반영 (화면 전환 즉시 보여주기)
+  const saved = localStorage.getItem('restaurantName');
+  if (saved) setStoreName(saved);
+
+  // 2) 서버 값으로 최종 동기화 (정확한 값 보장)
+  axios.get(`/api/store/${userId}`)
+    .then(res => {
+      const nm = res?.data?.restaurantName;
+      if (nm) {
+        setStoreName(nm);
+        // 혹시 로컬에도 최신 반영
+        localStorage.setItem('restaurantName', nm);
+      }
+    })
+    .catch(() => {/* 실패 시 로컬 값 유지 */});
+}, []);
+
+
   return (
     <div id='ownerhometh_wrap' className='container'>
       <div className="header">
-        <button className="qr"><img src={qr_btn} alt="" /></button>
-      </div>
-
+              <button
+                className="qr"
+                onClick={() => navigate('/menu_edit')}
+              >
+                <img src={qr_btn} alt="QR 버튼" />
+              </button>
+            </div>
       <div className="text">
         <h1>RESTAURANT</h1>
-        <h2>한그릇</h2>
+        <h2>{storeName}</h2>
         <div className="on">운영중</div>
       </div>
 
@@ -327,7 +437,7 @@ const Owner_home_third = () => {
                 <button
                   className="close"
                   onClick={() => {
-                    // ▶ 완료 = 숨김 시그니처에 등록 + 화면에서 제거
+                    // 완료 = 숨김 시그니처에 등록 + 화면에서 제거
                     const sig = t.sig || orderSignatureFromTable(t);
                     addHiddenSig(sig);
                     setTables(prev => prev.filter((_, i) => i !== idx));

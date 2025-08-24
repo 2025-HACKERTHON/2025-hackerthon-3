@@ -1,5 +1,5 @@
 // src/components/Owner_Section/Owner_home_first.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import qr_btn from '../../assets/img/cus_order/qr_btn.svg';
@@ -21,6 +21,7 @@ const Owner_home_first = () => {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const [openSet, setOpenSet] = useState(new Set());
@@ -38,6 +39,19 @@ const Owner_home_first = () => {
 
   axios.defaults.withCredentials = true;
 
+  // 폴링 제어용 상수
+  const BASE_INTERVAL_MS = 8000;     // 기본 폴링 주기
+  const MAX_INTERVAL_MS = 60000;     // 최대 백오프 주기
+  const LANG_MIN_INTERVAL_MS = 30000;// 언어 통계 최소 재조회 간격
+
+  // 폴링 제어용 ref
+  const pollTimerRef = useRef(null);
+  const inFlightRef = useRef(false);
+  const backoffRef = useRef(BASE_INTERVAL_MS);
+  const etagRef = useRef(null);
+  const abortRef = useRef(null);
+  const lastLangAtRef = useRef(0);
+
   // 로컬에 저장된 최근 테이블 번호를 읽는다
   const getFallbackTableId = () => {
     try {
@@ -54,12 +68,39 @@ const Owner_home_first = () => {
   };
 
   // 표시용 테이블 번호: 서버 값이 정상이면 그대로, 아니면 로컬 fallback
+  // 표시용 테이블 번호 계산: 숫자, 문자열("테이블 3", "1번"), 객체({id:3}, {tableId:3}, {num:"테이블 3"}) 모두 처리
   const computeDisplayTableId = (raw) => {
-    const n = Number(raw);
-    if (Number.isFinite(n) && n > 0) return n; // 서버 우선
+    const pick = (v) => {
+      // 숫자면 바로
+      if (typeof v === 'number') return v;
+      // 문자열이면 첫 숫자만 추출
+      if (typeof v === 'string') {
+        const m = v.match(/\d+/);
+        return m ? Number(m[0]) : NaN;
+      }
+      // 객체면 흔한 키들을 검사
+      if (v && typeof v === 'object') {
+        const cands = [
+          v.tableId, v.tableNo, v.tableNumber, v.table_id,
+          v.table?.id, v.table?.tableId, v.table?.no,
+          v.num, v.name, v.title // 예: "테이블 3"
+        ];
+        for (const cand of cands) {
+          const n = pick(cand);
+          if (Number.isFinite(n) && n > 0) return n;
+        }
+      }
+      return NaN;
+    };
+
+    const n = pick(raw);
+    if (Number.isFinite(n) && n > 0) return n;
+
+    // 서버에서 못 얻으면 로컬 선택값으로 폴백
     const fallback = getFallbackTableId();
     return fallback ?? 1;
   };
+
 
   // 서버 응답에서 카드명 배열 정규화
   const normalizeCardNames = (raw) => {
@@ -138,7 +179,7 @@ const Owner_home_first = () => {
     if (!Array.isArray(apiList)) return [];
     return apiList.map((o) => {
       const sig = orderSignatureFromApi(o);
-      const tableIdForDisplay = computeDisplayTableId(o?.tableId);
+      const tableIdForDisplay = computeDisplayTableId(o);
       const menuLines = [];
       const pairs = [];
       let cardTotal = 0;
@@ -184,7 +225,7 @@ const Owner_home_first = () => {
           (e.cards || []).map((c) => ({ title: c.title, desc: c.desc }))
         );
 
-        const displayTableId = computeDisplayTableId(e.tableId);
+        const displayTableId = computeDisplayTableId(e);
 
         const model = {
           ...e,
@@ -193,7 +234,7 @@ const Owner_home_first = () => {
           cards,
           cardCount: `주문카드 ${sumCount}장`,
         };
-        return { ...model, sig: orderSignatureFromTable(model) };
+        return { ...model, sig: orderSignatureFromTable(model), createdAt: e.createdAt || new Date().toISOString(), id: e.id || `local-${displayTableId}-${Date.now()}` };
       });
     } catch {
       return [];
@@ -211,17 +252,62 @@ const Owner_home_first = () => {
   };
 
   // 서버 우선, 실패 시 로컬
-  const loadOwnerOrders = async () => {
+  const loadOwnerOrdersOnce = async () => {
     const hidden = readHiddenSigs();
+
+    // 중복 요청 방지
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
+
+    // 이전 요청 취소
+    if (abortRef.current) abortRef.current.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     try {
-      const res = await axios.get('/api/orders/current', { withCredentials: true });
-      const arr = res?.data || [];
-      const srv = transformOrders(arr);
-      const loc = readLocalOrders();
-      const merged = mergeBySignature(srv, loc).filter((t) => !hidden.has(t.sig));
+      const headers = {};
+      // 조건부 요청: 서버가 ETag를 지원하는 경우 304로 응답 가능
+      if (etagRef.current) {
+        headers['If-None-Match'] = etagRef.current;
+      }
+
+      const res = await axios.get('/api/orders/current', {
+        params: { userId: 1 },
+        withCredentials: true,
+        headers,
+        signal: controller.signal,
+        validateStatus: (s) => (s >= 200 && s < 300) || s === 304,
+      });
+
+      // ETag 보관
+      const et = res.headers?.etag || res.headers?.ETag;
+      if (et) etagRef.current = et;
+
+      let merged;
+      if (res.status === 304) {
+        // 변경 없음. 기존 상태 유지
+        merged = tables;
+      } else {
+        // 서버가 배열 또는 { result: [] } 둘 다 대응
+        const arr = Array.isArray(res?.data) ? res.data : (Array.isArray(res?.data?.result) ? res.data.result : []);
+        const srv = transformOrders(arr).filter((t) => !hidden.has(t.sig));
+        const loc = readLocalOrders().filter((t) => !hidden.has(t.sig));
+        merged = mergeBySignature(srv, loc);
+      }
+
       setTables(merged);
+      // 성공 시 백오프 초기화
+      backoffRef.current = BASE_INTERVAL_MS;
+      return true;
     } catch {
+      // 실패 시 로컬 폴백
+      const hidden = readHiddenSigs();
       setTables(readLocalOrders().filter((t) => !hidden.has(t.sig)));
+      // 백오프 증가
+      backoffRef.current = Math.min(Math.max(backoffRef.current * 2, BASE_INTERVAL_MS), MAX_INTERVAL_MS);
+      return false;
+    } finally {
+      inFlightRef.current = false;
     }
   };
 
@@ -239,47 +325,129 @@ const Owner_home_first = () => {
   };
   const fmtPct = (v) => `${Math.round(Number(v || 0))}%`;
 
-  const loadLanguageStats = async () => {
+  const loadLanguageStatsOnce = async () => {
+    const now = Date.now();
+    if (now - lastLangAtRef.current < LANG_MIN_INTERVAL_MS) return; // 너무 잦은 호출 방지
+    lastLangAtRef.current = now;
+
     try {
       const res = await axios.get('/api/statistics/languages', {
-      params: { userId: 1 },
-      withCredentials: true,
+        params: { userId: 1 },
+        withCredentials: true,
       });
-      const arr = Array.isArray(res?.data) ? res.data : [];
+      const arr = Array.isArray(res?.data) ? res.data : (Array.isArray(res?.data?.result) ? res.data.result : []);
       const sorted = [...arr].sort((a, b) => (b.percentage || 0) - (a.percentage || 0)).slice(0, 3);
       setLangStats(sorted);
-    } catch { setLangStats([]); }
+    } catch {
+      // 실패 시 유지
+    }
+  };
+
+  // 가시성 기반 폴링 루프
+  const scheduleNext = (delay) => {
+    if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+    pollTimerRef.current = setTimeout(runLoopOnce, delay);
+  };
+
+  const runLoopOnce = async () => {
+    // 문서가 보이지 않으면 폴링 중단
+    if (document.visibilityState !== 'visible') {
+      // 보일 때 다시 시작
+      return;
+    }
+    // 주문 갱신
+    const ok = await loadOwnerOrdersOnce();
+    // 언어 통계는 덜 자주
+    loadLanguageStatsOnce();
+    // 다음 실행 예약
+    scheduleNext(ok ? BASE_INTERVAL_MS : backoffRef.current);
   };
 
   useEffect(() => {
-    loadOwnerOrders();
-    loadLanguageStats();
-    const iv = setInterval(() => {
-      loadOwnerOrders();
-      loadLanguageStats();
-    }, 1500);
+    // 최초 1회 즉시 실행
+    runLoopOnce();
+
+    // 가시성 변화에 따라 폴링 시작/정지
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        // 즉시 한 번 실행하고 루프 재개
+        runLoopOnce();
+      } else {
+        // 숨겨지면 타이머 정지 및 진행 중 요청 취소
+        if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+        if (abortRef.current) abortRef.current.abort();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    // 포커스/페이지쇼 시 즉시 한 번 업데이트
+    const onFocus = () => runLoopOnce();
+    const onPageShow = () => runLoopOnce();
+    window.addEventListener('focus', onFocus);
+    window.addEventListener('pageshow', onPageShow);
+
+    // 로컬스토리지 이벤트는 디바운스 후 반영
+    let storageT;
     const onStorage = (ev) => {
       if (ev.key === 'owner_live_orders' || ev.key === 'owner_hidden_sigs' || ev.key === 'orderDraft_v1') {
-        loadOwnerOrders();
+        if (storageT) clearTimeout(storageT);
+        storageT = setTimeout(() => runLoopOnce(), 200);
       }
     };
     window.addEventListener('storage', onStorage);
-    return () => { clearInterval(iv); window.removeEventListener('storage', onStorage); };
+
+    return () => {
+      if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+      if (abortRef.current) abortRef.current.abort();
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('pageshow', onPageShow);
+      window.removeEventListener('storage', onStorage);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const top1 = langStats[0] || { language: '', percentage: 0 };
   const top2 = langStats[1] || { language: '', percentage: 0 };
   const top3 = langStats[2] || { language: '', percentage: 0 };
 
+  // 상단 import/변수들 아래에 추가
+const [storeName, setStoreName] = useState('가게명');
+const userId = 1; // Menu_Edit에서 쓰는 것과 동일하게 맞추세요
+
+useEffect(() => {
+  // 1) 로컬 우선 반영 (화면 전환 즉시 보여주기)
+  const saved = localStorage.getItem('restaurantName');
+  if (saved) setStoreName(saved);
+
+  // 2) 서버 값으로 최종 동기화 (정확한 값 보장)
+  axios.get(`/api/store/${userId}`)
+    .then(res => {
+      const nm = res?.data?.restaurantName;
+      if (nm) {
+        setStoreName(nm);
+        // 혹시 로컬에도 최신 반영
+        localStorage.setItem('restaurantName', nm);
+      }
+    })
+    .catch(() => {/* 실패 시 로컬 값 유지 */});
+}, []);
+
+
   return (
     <div id='ownerhomef_wrap' className='container'>
       <div className="header">
-        <button className="qr"><img src={qr_btn} alt="" /></button>
+        <button
+          className="qr"
+          onClick={() => navigate('/menu_edit')}
+        >
+          <img src={qr_btn} alt="QR 버튼" />
+        </button>
       </div>
 
       <div className="text">
         <h1>RESTAURANT</h1>
-        <h2>한그릇</h2>
+        <h2>{storeName}</h2>
         <div className="on">운영중</div>
       </div>
 
@@ -324,11 +492,15 @@ const Owner_home_first = () => {
                   {t.cards.map((c, i) => (
                     <div className="order_card" key={i}>
                       <strong className="title">{c.title}</strong>
-                      <p className="desc">{c.desc}</p>
+                      <p className="desc">
+                        {c.desc}
+                        <span className="table_no">{" "}– 테이블 {t.tableId}</span>
+                      </p>
                     </div>
                   ))}
                 </div>
               )}
+
             </div>
           ))
         )}
