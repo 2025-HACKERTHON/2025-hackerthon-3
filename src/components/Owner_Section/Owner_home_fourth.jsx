@@ -1,5 +1,5 @@
 // src/components/Owner_Section/Owner_home_fourth.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import qr_btn from '../../assets/img/cus_order/qr_btn.svg';
@@ -13,8 +13,7 @@ const Owner_home_fourth = () => {
   const pathFor = (n) => `/owner_home_${PAGE_SLUGS[(n - 1) % TOTAL_PAGES]}`;
 
   const goNext = () => navigate(pathFor((current % TOTAL_PAGES) + 1));
-  const goPrev = () =>
-    navigate(pathFor(((current - 2 + TOTAL_PAGES) % TOTAL_PAGES) + 1));
+  const goPrev = () => navigate(pathFor(((current - 2 + TOTAL_PAGES) % TOTAL_PAGES) + 1));
 
   useEffect(() => {
     const onKey = (e) => {
@@ -29,7 +28,22 @@ const Owner_home_fourth = () => {
   // 전역 인터셉터 영향을 피하기 위한 로컬 axios 인스턴스
   const api = axios.create({ withCredentials: true });
 
-  // 세션 쿠키 존재 여부(세션 방식일 때만 사용. JWT 쓰면 이 함수 무시됨)
+  // 폴링 제어 상수
+  const BASE_INTERVAL_MS = 8000;      // 주문 폴링 기본 주기
+  const MAX_INTERVAL_MS = 60000;      // 주문 폴링 최대 백오프
+  const TOP3_MIN_INTERVAL_MS = 30000; // 영어권 베스트3 최소 호출 간격
+  const LANG_MIN_INTERVAL_MS = 45000; // 언어 통계 최소 호출 간격
+
+  // 폴링 제어 ref
+  const pollTimerRef = useRef(null);
+  const inFlightRef = useRef(false);
+  const backoffRef = useRef(BASE_INTERVAL_MS);
+  const ordersEtagRef = useRef(null);
+  const ordersAbortRef = useRef(null);
+  const lastTop3AtRef = useRef(0);
+  const lastLangAtRef = useRef(0);
+
+  // 세션 쿠키 존재 여부(세션 방식일 때만 사용. JWT면 무시)
   const hasSession = () => {
     try {
       return document.cookie.split(';').some(c => c.trim().startsWith('JSESSIONID='));
@@ -38,7 +52,22 @@ const Owner_home_fourth = () => {
     }
   };
 
-  // ---------- 공통 유틸(First/Third와 동일 철학) ----------
+  // 상태
+  const [openSet, setOpenSet] = useState(new Set());
+  const toggleOpen = (idx) => {
+    setOpenSet((prev) => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      return next;
+    });
+  };
+
+  const [tables, setTables] = useState([]);
+  const [engTop3, setEngTop3] = useState([]);     // 영어권 베스트 메뉴 3개
+  const [langStats, setLangStats] = useState([]); // 언어 통계
+
+  // 공통 유틸
   const getFallbackTableId = () => {
     try {
       const raw = localStorage.getItem('orderDraft_v1');
@@ -101,12 +130,12 @@ const Owner_home_fourth = () => {
       const set = readHiddenSigs();
       set.add(sig);
       localStorage.setItem('owner_hidden_sigs', JSON.stringify(Array.from(set)));
-      // 로컬 브릿지에도 반영(있다면 제거)
+      // 로컬 브릿지에서도 제거
       const raw = localStorage.getItem('owner_live_orders');
       const arr = raw ? JSON.parse(raw) : [];
       const filtered = arr.filter((e) => orderSignatureFromTable(e) !== sig);
       localStorage.setItem('owner_live_orders', JSON.stringify(filtered));
-      // 스토리지 이벤트로 다른 탭/컴포넌트 갱신
+      // 다른 탭에 반영
       window.dispatchEvent(new StorageEvent('storage', { key: 'owner_hidden_sigs' }));
     } catch {}
   };
@@ -126,22 +155,7 @@ const Owner_home_fourth = () => {
     }));
   };
 
-  // ---------- 상태 ----------
-  const [openSet, setOpenSet] = useState(new Set());
-  const toggleOpen = (idx) => {
-    setOpenSet((prev) => {
-      const next = new Set(prev);
-      if (next.has(idx)) next.delete(idx);
-      else next.add(idx);
-      return next;
-    });
-  };
-
-  const [tables, setTables] = useState([]);
-  const [engTop3, setEngTop3] = useState([]);         // 영어권 베스트 메뉴 3개
-  const [langStats, setLangStats] = useState([]);     // 언어 통계(화면 구조는 그대로 유지)
-
-  // ---------- 서버/로컬 변환 & 병합 ----------
+  // 서버 → 화면 모델
   function transformOrders(apiList) {
     if (!Array.isArray(apiList)) return [];
     return apiList.map((o) => {
@@ -179,6 +193,7 @@ const Owner_home_fourth = () => {
     });
   }
 
+  // 로컬 → 화면 모델
   function readLocalOrders() {
     try {
       const raw = localStorage.getItem('owner_live_orders');
@@ -205,6 +220,7 @@ const Owner_home_fourth = () => {
     }
   }
 
+  // 서버/로컬 병합 (서버 우선, 숨김 필터 적용)
   const mergeBySignature = (serverArr, localArr, hidden) => {
     const bySig = new Map();
     serverArr.forEach((x) => { if (!hidden.has(x.sig)) bySig.set(x.sig, x); });
@@ -214,95 +230,188 @@ const Owner_home_fourth = () => {
     );
   };
 
-  // ---------- API 호출 ----------
-  async function loadOwnerOrders() {
+  // 주문 로드 1회: ETag 조건부 요청, 실패 시 지수 백오프
+  async function loadOwnerOrdersOnce() {
     const hidden = readHiddenSigs();
 
-    // 세션 쿠키 없으면 로컬 폴백
-    if (!hasSession()) {
-      setTables(mergeBySignature([], readLocalOrders(), hidden));
-      return;
-    }
+    if (inFlightRef.current) return true;
+    inFlightRef.current = true;
+
+    if (ordersAbortRef.current) ordersAbortRef.current.abort();
+    const controller = new AbortController();
+    ordersAbortRef.current = controller;
 
     try {
-      const res = await api.get('/api/orders/current');
-      // 서버가 배열 또는 { result: [] } 형태 둘 다 가능하게 처리
+      if (!hasSession()) {
+        setTables(mergeBySignature([], readLocalOrders(), hidden));
+        backoffRef.current = BASE_INTERVAL_MS;
+        return true;
+      }
+
+      const headers = {};
+      if (ordersEtagRef.current) headers['If-None-Match'] = ordersEtagRef.current;
+
+      const res = await api.get('/api/orders/current', {
+        headers,
+        signal: controller.signal,
+        validateStatus: (s) => (s >= 200 && s < 300) || s === 304,
+      });
+
+      const et = res.headers?.etag || res.headers?.ETag;
+      if (et) ordersEtagRef.current = et;
+
+      if (res.status === 304) {
+        backoffRef.current = BASE_INTERVAL_MS;
+        return true;
+      }
+
       const arr = Array.isArray(res?.data) ? res.data : (Array.isArray(res?.data?.result) ? res.data.result : []);
       const srv = transformOrders(arr);
       const loc = readLocalOrders();
       setTables(mergeBySignature(srv, loc, hidden));
+
+      backoffRef.current = BASE_INTERVAL_MS;
+      return true;
     } catch {
       setTables(mergeBySignature([], readLocalOrders(), hidden));
+      backoffRef.current = Math.min(Math.max(backoffRef.current * 2, BASE_INTERVAL_MS), MAX_INTERVAL_MS);
+      return false;
+    } finally {
+      inFlightRef.current = false;
     }
   }
 
-  async function loadLanguageStats() {
-    try {
-      const res = await api.get('/api/statistics/languages', { params: { userId: 1 } });
-      const arr = Array.isArray(res?.data?.result) ? res.data.result : (Array.isArray(res?.data) ? res.data : []);
-      setLangStats(arr);
-      // 필요시: console.log('[fourth] languages', arr);
-    } catch {
-      setLangStats([]);
-    }
-  }
+  // 영어권 베스트 메뉴 3개: 최소 호출 간격 보장
+  async function loadEnglishTop3Once() {
+    const now = Date.now();
+    if (now - lastTop3AtRef.current < TOP3_MIN_INTERVAL_MS) return;
+    lastTop3AtRef.current = now;
 
-  async function loadEnglishTop3() {
     try {
       const res = await api.get('/api/statistics/menus/top3/1/ENG');
       const arr = Array.isArray(res?.data?.result) ? res.data.result : (Array.isArray(res?.data) ? res.data : []);
       setEngTop3(arr.map(s => String(s || '').trim()).filter(Boolean).slice(0, 3));
     } catch {
-      setEngTop3([]);
+      // 실패 시 기존 값 유지
     }
   }
 
+  // 언어 통계: 최소 호출 간격 보장
+  async function loadLanguageStatsOnce() {
+    const now = Date.now();
+    if (now - lastLangAtRef.current < LANG_MIN_INTERVAL_MS) return;
+    lastLangAtRef.current = now;
+
+    try {
+      const res = await api.get('/api/statistics/languages', { params: { userId: 1 } });
+      const arr = Array.isArray(res?.data?.result) ? res.data.result : (Array.isArray(res?.data) ? res.data : []);
+      setLangStats(arr);
+    } catch {
+      // 실패 시 기존 값 유지
+    }
+  }
+
+  // 가시성 기반 폴링 루프
+  const scheduleNext = (delay) => {
+    if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+    pollTimerRef.current = setTimeout(runLoopOnce, delay);
+  };
+
+  const runLoopOnce = async () => {
+    if (document.visibilityState !== 'visible') return;
+    const ok = await loadOwnerOrdersOnce();
+    loadEnglishTop3Once();
+    loadLanguageStatsOnce();
+    scheduleNext(ok ? BASE_INTERVAL_MS : backoffRef.current);
+  };
+
   useEffect(() => {
-    // 최초 로드
-    loadOwnerOrders();
-    loadLanguageStats();
-    loadEnglishTop3();
+    // 최초 1회 실행
+    runLoopOnce();
 
-    // 주기 갱신
-    const iv = setInterval(() => {
-      loadOwnerOrders();
-      loadLanguageStats();
-      loadEnglishTop3();
-    }, 1500);
+    // 가시성 변화에 따라 폴링 시작/정지
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        runLoopOnce();
+      } else {
+        if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+        if (ordersAbortRef.current) ordersAbortRef.current.abort();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
 
-    // 로컬스토리지 브릿지 이벤트 대응 (숨김/로컬 변경 모두)
+    // 포커스/페이지쇼 시 즉시 갱신
+    const onFocus = () => runLoopOnce();
+    const onPageShow = () => runLoopOnce();
+    window.addEventListener('focus', onFocus);
+    window.addEventListener('pageshow', onPageShow);
+
+    // 로컬스토리지 변화에 대한 디바운스 갱신
+    let storageT;
     const onStorage = (ev) => {
       if (
         ev.key === 'owner_live_orders' ||
         ev.key === 'owner_hidden_sigs' ||
         ev.key === 'orderDraft_v1'
       ) {
-        loadOwnerOrders();
+        if (storageT) clearTimeout(storageT);
+        storageT = setTimeout(() => runLoopOnce(), 200);
       }
     };
     window.addEventListener('storage', onStorage);
 
     return () => {
-      clearInterval(iv);
+      if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+      if (ordersAbortRef.current) ordersAbortRef.current.abort();
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('pageshow', onPageShow);
       window.removeEventListener('storage', onStorage);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 버블 차트 라벨: API 응답 반영(없으면 기존 문자열 유지)
+  // 버블 차트 라벨
   const bubble1 = engTop3[0] || '소고기 미역국 정식';
   const bubble2 = engTop3[1] || '제육볶음 덮밥';
   const bubble3 = engTop3[2] || '김치전';
 
+  // 상단 import/변수들 아래에 추가
+const [storeName, setStoreName] = useState('가게명');
+const userId = 1; // Menu_Edit에서 쓰는 것과 동일하게 맞추세요
+
+useEffect(() => {
+  // 1) 로컬 우선 반영 (화면 전환 즉시 보여주기)
+  const saved = localStorage.getItem('restaurantName');
+  if (saved) setStoreName(saved);
+
+  // 2) 서버 값으로 최종 동기화 (정확한 값 보장)
+  axios.get(`/api/store/${userId}`)
+    .then(res => {
+      const nm = res?.data?.restaurantName;
+      if (nm) {
+        setStoreName(nm);
+        // 혹시 로컬에도 최신 반영
+        localStorage.setItem('restaurantName', nm);
+      }
+    })
+    .catch(() => {/* 실패 시 로컬 값 유지 */});
+}, []);
+
+
   return (
     <div id='ownerhomefo_wrap' className='container'>
       <div className="header">
-        <button className="qr"><img src={qr_btn} alt="" /></button>
-      </div>
-
+              <button
+                className="qr"
+                onClick={() => navigate('/menu_edit')}
+              >
+                <img src={qr_btn} alt="QR 버튼" />
+              </button>
+            </div>
       <div className="text">
         <h1>RESTAURANT</h1>
-        <h2>한그릇</h2>
+        <h2>{storeName}</h2>
         <div className="on">운영중</div>
       </div>
 
@@ -326,7 +435,7 @@ const Owner_home_fourth = () => {
               <button
                 className="close"
                 onClick={() => {
-                  // 완료 = 숨김 시그니처에 등록 + 화면에서 제거 (서버 삭제 아님)
+                  // 완료 = 숨김 시그니처에 등록 + 화면에서 제거
                   const sig = t.sig || orderSignatureFromTable(t);
                   addHiddenSig(sig);
                   setTables(prev => prev.filter((_, i) => i !== idx));
@@ -358,7 +467,7 @@ const Owner_home_fourth = () => {
             <span className="label">{bubble1}</span>
           </div>
 
-          <div className="bubble mid" aria-label="두 번째로 많은 주문">
+        <div className="bubble mid" aria-label="두 번째로 많은 주문">
             <span className="label">{bubble2}</span>
           </div>
 
