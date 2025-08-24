@@ -124,40 +124,45 @@ const Store_info = () => {
 
         {/* 가게 특성 */}
         <div className="detail_box">
-          <p>가게 특성</p>
+          <h1>가게 특성</h1>
           <div className="detail_top">
+            <div className="detail_1">
             <button
               className={features.includes("매운맛 조절 가능") ? "selected" : ""}
               onClick={() => toggleFeature("매운맛 조절 가능")}
             >
-              매운맛 조절 가능
-            </button>
+              <p>매운맛 조절 가능</p>
+            </button></div>
+            <div className="detail_2">
             <button
               className={features.includes("비건 변경 가능") ? "selected" : ""}
               onClick={() => toggleFeature("비건 변경 가능")}
             >
-              비건 변경 가능
-            </button>
+              <p>비건 변경 가능</p>
+            </button></div>
           </div>
           <div className="detail_bottom">
+            <div className="detail_3">
             <button
               className={features.includes("Takeout 가능") ? "selected" : ""}
               onClick={() => toggleFeature("Takeout 가능")}
             >
-              Takeout 가능
-            </button>
+              <p>Takeout 가능</p>
+            </button></div>
+            <div className="detail_4">
             <button
               className={features.includes("반려견 동반 가능") ? "selected" : ""}
               onClick={() => toggleFeature("반려견 동반 가능")}
             >
-              반려견 동반 가능
-            </button>
+              <p>반려견 동반 가능</p>
+            </button></div>
+            <div className="detail_5">
             <button
               className={features.includes("직접 추가하기") ? "selected" : ""}
               onClick={() => toggleFeature("직접 추가하기")}
             >
-              직접 추가하기
-            </button>
+              <p>직접 추가하기</p>
+            </button></div>
           </div>
         </div>
 
