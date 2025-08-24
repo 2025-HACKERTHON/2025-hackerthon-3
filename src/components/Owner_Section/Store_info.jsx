@@ -38,7 +38,7 @@ const Store_info = () => {
       };
 
       const response = await axios.post(
-        `http://localhost:8080/api/user/register/step2/${userId}`,
+        `http://3.38.135.47:8080/api/user/register/step2/${userId}`,
         requestData,
         {
           headers: { 'Content-Type': 'application/json' },

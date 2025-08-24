@@ -15,7 +15,7 @@ const Login = () => {
   // 로그인 처리 함수
   const handleLogin = async () => {
     try {
-      const response = await axios.post("http://localhost:8080/api/user/login", {
+      const response = await axios.post("http://3.38.135.47:8080/api/user/login", {
         email: email,
         password: password,
       });
@@ -23,10 +23,11 @@ const Login = () => {
       console.log("로그인 성공:", response.data);
 
       // 로그인 성공 시 -> 다음 페이지로 이동
-      navigate('/storeinfo');
+      navigate('/Storeinfo');
     } catch (error) {
-      console.error("로그인 실패:", error.response ? error.response.data : error.message);
-      alert("로그인 실패! 이메일 또는 비밀번호를 확인하세요.");
+      // console.error("로그인 실패:", error.response ? error.response.data : error.message);
+      // alert("로그인 실패! 이메일 또는 비밀번호를 확인하세요.");
+      console.log(error)
     }
   };
 

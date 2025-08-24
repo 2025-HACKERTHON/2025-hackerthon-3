@@ -19,7 +19,7 @@ const Menu_Chinese = () => {
   // ✅ API 호출
   useEffect(() => {
     const userId = 2; // 👉 실제 userId로 변경 필요
-    fetch(`api/store/${userId}/settings/menu_info/lang/ch`)
+    fetch(`http://3.38.135.47:8080/api/store/${userId}/settings/menu_info/lang/ch`)
       .then(res => res.json())
       .then(data => {
         setRestaurantInfo(data.restaurantInfo);
