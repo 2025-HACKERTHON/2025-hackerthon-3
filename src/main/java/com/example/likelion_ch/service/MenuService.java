@@ -1,17 +1,10 @@
 package com.example.likelion_ch.service;
 
-import com.example.likelion_ch.dto.MenuInfo;
-import com.example.likelion_ch.dto.MenuRequest;
-import com.example.likelion_ch.dto.MenuResponse;
-import com.example.likelion_ch.dto.TopMenuResponse;
-import com.example.likelion_ch.dto.StoreResponse;
-import com.example.likelion_ch.dto.CreateOrderRequest;
-import com.example.likelion_ch.dto.TranslationRequest;
-import com.example.likelion_ch.dto.MenuWithRestaurantResponse;
-import com.example.likelion_ch.dto.RestaurantInfoResponse;
+import com.example.likelion_ch.dto.*;
 import com.example.likelion_ch.entity.Menu;
 import com.example.likelion_ch.entity.OrderItem;
 import com.example.likelion_ch.entity.SiteUser;
+import com.example.likelion_ch.entity.StoreFeature;
 import com.example.likelion_ch.repository.MenuRepository;
 import com.example.likelion_ch.repository.OrderItemRepository;
 import com.example.likelion_ch.repository.SiteUserRepository;
@@ -23,10 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -58,12 +48,55 @@ public class MenuService {
         SiteUser user = siteUserRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
         List<Menu> menuList = menuRepository.findByUser(user);
+        Set<StoreFeature> features = user.getFeatures();
 
         return new StoreResponse(
                 user.getRestaurantName(),
                 user.getRestaurantAddress(),
                 user.getShortDescription(),
                 user.getLongDescription(),
+                features,
+                menuList
+        );
+    }
+
+    public StoreResponse getStoreWithAllMenu(Long userId) {
+        SiteUser user = siteUserRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+        List<Menu> menuList = menuRepository.findByUser(user);
+
+        // 메뉴를 MenuResponse로 변환
+        List<MenuResponse> menuResponses = menuList.stream().map(menu -> {
+            MenuResponse resp = new MenuResponse();
+            resp.setId(menu.getId());
+            resp.setUserMenuId(menu.getUserMenuId());
+            resp.setUserId(user.getId());
+            resp.setNameKo(menu.getNameKo());
+            resp.setNameEn(menu.getNameEn());
+            resp.setNameJa(menu.getNameJa());
+            resp.setNameCh(menu.getNameCh());
+            resp.setDescription(menu.getDescription());
+            resp.setDescriptionEn(menu.getDescriptionEn());
+            resp.setDescriptionJa(menu.getDescriptionJa());
+            resp.setDescriptionCh(menu.getDescriptionCh());
+            resp.setPrice(menu.getPrice());
+            resp.setImageUrl(menu.getImageUrl());
+            resp.setVersion(menu.getVersion());
+            resp.setLanguage("ko"); // 필요시 동적 처리 가능
+            return resp;
+        }).collect(Collectors.toList());
+
+        List<FeatureResponse> featureResponses = user.getFeatures().stream()
+                .map(f -> new FeatureResponse(f.getFeatureId(), f.getName()))
+                .toList();
+
+// StoreResponse용 생성자 추가 필요 (List<FeatureResponse>, List<MenuResponse>)
+        return new StoreResponse(
+                user.getRestaurantName(),
+                user.getRestaurantAddress(),
+                user.getShortDescription(),
+                user.getLongDescription(),
+                featureResponses,
                 menuList
         );
     }
@@ -81,16 +114,30 @@ public class MenuService {
     }
 
     // 전체 메뉴 조회
-    public List<MenuInfo> getAllMenusForStore(Long userId) {
+    public List<MenuResponse> getAllMenusForStore(Long userId) {
         SiteUser user = siteUserRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
         List<Menu> menuList = menuRepository.findByUser(user);
 
         return menuList.stream()
-                .map(menu -> MenuInfo.builder()
-                        .nameKo(menu.getMenuName())
+                .map(menu -> MenuResponse.builder()
+                        .id(menu.getId())
+                        .userMenuId(menu.getUserMenuId())
+                        .userId(user.getId())
+                        .nameKo(menu.getNameKo())
+                        .nameEn(menu.getNameEn())
+                        .nameJa(menu.getNameJa())
+                        .nameCh(menu.getNameCh())
                         .description(menu.getDescription())
+                        .descriptionEn(menu.getDescriptionEn())
+                        .descriptionJa(menu.getDescriptionJa())
+                        .descriptionCh(menu.getDescriptionCh())
                         .price(menu.getPrice())
+                        .imageUrl(menu.getImageUrl())
+                        .version(menu.getVersion())
+                        .createdAt(menu.getCreatedAt())
+                        .updatedAt(menu.getUpdatedAt())
+                        .language("ko") // 필요시 선택 언어로 변경
                         .build())
                 .toList();
     }
@@ -171,6 +218,8 @@ public class MenuService {
         menu.setDescription(request.getMenuDescription());
         menu.setPrice(request.getMenuPrice());
 
+        menu.setLanguage(request.getLanguage() != null ? request.getLanguage() : "ko");
+
         // 이미지가 제공된 경우 처리
         if (image != null && !image.isEmpty()) {
             try {
@@ -220,6 +269,55 @@ public class MenuService {
                 .userId(user.getId())
                 .build();
     }
+
+    // 메뉴 언어별 업데이트
+    @Transactional
+    public MenuResponse updateMenuLanguage(Long userId, Integer userMenuId, String langCode, MenuRequest request) {
+        SiteUser user = siteUserRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+        Menu menu = menuRepository.findByUserAndUserMenuId(user, userMenuId)
+                .orElseThrow(() -> new RuntimeException("사용자 소유의 메뉴가 아닙니다."));
+
+        switch (langCode.toLowerCase()) {
+            case "en":
+                menu.setNameEn(request.getMenuName());
+                menu.setDescriptionEn(request.getMenuDescription());
+                break;
+            case "ja":
+                menu.setNameJa(request.getMenuName());
+                menu.setDescriptionJa(request.getMenuDescription());
+                break;
+            case "ch":
+                menu.setNameCh(request.getMenuName());
+                menu.setDescriptionCh(request.getMenuDescription());
+                break;
+            case "ko":
+            default:
+                menu.setNameKo(request.getMenuName());
+                menu.setDescription(request.getMenuDescription());
+        }
+
+        menuRepository.save(menu);
+
+        return MenuResponse.builder()
+                .id(menu.getId())
+                .userMenuId(menu.getUserMenuId())
+                .nameKo(menu.getNameKo())
+                .nameEn(menu.getNameEn())
+                .nameJa(menu.getNameJa())
+                .nameCh(menu.getNameCh())
+                .description(menu.getDescription())
+                .descriptionEn(menu.getDescriptionEn())
+                .descriptionJa(menu.getDescriptionJa())
+                .descriptionCh(menu.getDescriptionCh())
+                .price(menu.getPrice())
+                .imageUrl(menu.getImageUrl())
+                .userId(user.getId())
+                .language(langCode)
+                .build();
+    }
+
 
     // 메뉴 수정 (이미지 포함)
     public MenuResponse updateMenuWithImage(Long userId, Integer userMenuId, MenuRequest request, MultipartFile image) {
@@ -380,15 +478,12 @@ public class MenuService {
      */
     private List<MenuResponse> getMenusByLanguageForResponse(Long userId, String langCode) {
         List<Menu> menus;
-        
+
         if ("ko".equals(langCode)) {
-            // 한국어 메뉴 조회
             menus = findKoreanMenusByUserId(userId);
         } else {
-            // 번역된 메뉴 조회
             menus = menuRepository.findByUserIdAndLanguage(userId, langCode);
-            
-            // 번역된 메뉴가 없으면 한국어 메뉴를 번역
+
             if (menus.isEmpty()) {
                 List<Menu> koreanMenus = findKoreanMenusByUserId(userId);
                 for (Menu koreanMenu : koreanMenus) {
@@ -397,8 +492,7 @@ public class MenuService {
                         menus.add(translatedMenu);
                     } catch (Exception e) {
                         log.warn("메뉴 번역 실패: {}", e.getMessage());
-                        // 번역 실패 시 한국어 메뉴 사용
-                        menus.add(koreanMenu);
+                        menus.add(koreanMenu); // 번역 실패 시 한국어 메뉴 사용
                     }
                 }
             }
@@ -409,9 +503,17 @@ public class MenuService {
                         .id(menu.getId())
                         .userMenuId(menu.getUserMenuId())
                         .nameKo(menu.getNameKo())
+                        .nameEn(menu.getNameEn())
+                        .nameJa(menu.getNameJa())
+                        .nameCh(menu.getNameCh())
                         .description(menu.getDescription())
+                        .descriptionEn(menu.getDescriptionEn())
+                        .descriptionJa(menu.getDescriptionJa())
+                        .descriptionCh(menu.getDescriptionCh())
                         .price(menu.getPrice())
+                        .imageUrl(menu.getImageUrl())
                         .userId(userId)
+                        .language(langCode)
                         .build())
                 .toList();
     }
@@ -485,35 +587,40 @@ public class MenuService {
      */
     @Transactional
     public Menu translateAndSaveMenu(Menu koreanMenu, String targetLangCode) {
-        try {
-            // 메뉴명 번역
-            String translatedName = translateMenuName(koreanMenu.getNameKo(), targetLangCode);
-            
-            // 메뉴 설명 번역
-            String translatedDescription = null;
-            if (koreanMenu.getDescription() != null && !koreanMenu.getDescription().isEmpty()) {
-                translatedDescription = translateMenuDescription(koreanMenu.getDescription(), targetLangCode);
-            }
+        // 기존 메뉴 확인: 같은 userMenuId + targetLangCode
+        Optional<Menu> existingMenuOpt = menuRepository.findByUserMenuIdAndLanguage(koreanMenu.getUserMenuId(), targetLangCode);
+        Menu menu;
 
-            // 번역된 메뉴 생성
-            Menu translatedMenu = new Menu();
-            translatedMenu.setUserMenuId(koreanMenu.getUserMenuId());
-            translatedMenu.setNameKo(translatedName);
-            translatedMenu.setPrice(koreanMenu.getPrice());
-            translatedMenu.setDescription(translatedDescription);
-            translatedMenu.setLanguage(targetLangCode);
-            translatedMenu.setUser(koreanMenu.getUser());
-
-            // 저장
-            Menu savedMenu = menuRepository.save(translatedMenu);
-            log.info("메뉴 번역 완료: {} -> {} (언어: {})", koreanMenu.getNameKo(), translatedName, targetLangCode);
-            
-            return savedMenu;
-            
-        } catch (Exception e) {
-            log.error("메뉴 번역 중 오류 발생: {}", e.getMessage(), e);
-            throw new RuntimeException("메뉴 번역 실패: " + e.getMessage());
+        if (existingMenuOpt.isPresent()) {
+            menu = existingMenuOpt.get();
+        } else {
+            menu = new Menu();
+            menu.setUserMenuId(koreanMenu.getUserMenuId());
+            menu.setUser(koreanMenu.getUser());
+            menu.setLanguage(targetLangCode);
         }
+
+        // 번역
+        menu.setNameKo(koreanMenu.getNameKo()); // ko는 항상 유지
+        switch (targetLangCode.toLowerCase()) {
+            case "en" -> {
+                menu.setNameEn(translateMenuName(koreanMenu.getNameKo(), "en"));
+                menu.setDescriptionEn(translateMenuDescription(koreanMenu.getDescription(), "en"));
+            }
+            case "ja" -> {
+                menu.setNameJa(translateMenuName(koreanMenu.getNameKo(), "ja"));
+                menu.setDescriptionJa(translateMenuDescription(koreanMenu.getDescription(), "ja"));
+            }
+            case "ch" -> {
+                menu.setNameCh(translateMenuName(koreanMenu.getNameKo(), "ch"));
+                menu.setDescriptionCh(translateMenuDescription(koreanMenu.getDescription(), "ch"));
+            }
+        }
+
+        menu.setPrice(koreanMenu.getPrice());
+        menu.setImageUrl(koreanMenu.getImageUrl());
+
+        return menuRepository.save(menu);
     }
 
     /**
@@ -578,5 +685,52 @@ public class MenuService {
                 .build();
     }
 
+    public List<MenuResponse> getMenuByUserIdAndLang(Long userId, String langCode) {
+        List<Menu> menus;
 
+        if ("ko".equals(langCode)) {
+            menus = menuRepository.findByUser_IdOrderByUserMenuIdAsc(userId).stream()
+                    .filter(menu -> menu.getLanguage() == null || "ko".equals(menu.getLanguage()))
+                    .collect(Collectors.toList());
+        } else {
+            menus = menuRepository.findByUser_IdAndLanguage(userId, langCode);
+        }
+
+        return menus.stream()
+                .map(menu -> {
+                    String name;
+                    String description;
+
+                    switch (langCode) {
+                        case "en":
+                            name = menu.getNameEn();
+                            description = menu.getDescriptionEn();
+                            break;
+                        case "ja":
+                            name = menu.getNameJa();
+                            description = menu.getDescriptionJa();
+                            break;
+                        case "ch":
+                            name = menu.getNameCh();
+                            description = menu.getDescriptionCh();
+                            break;
+                        case "ko":
+                        default:
+                            name = menu.getNameKo();
+                            description = menu.getDescription();
+                            break;
+                    }
+
+                    return MenuResponse.builder()
+                            .id(menu.getId())
+                            .userMenuId(menu.getUserMenuId())
+                            .nameKo(name)
+                            .description(description)
+                            .price(menu.getPrice())
+                            .language(langCode)
+                            .userId(menu.getUser() != null ? menu.getUser().getId() : null)
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
 }
