@@ -295,7 +295,7 @@ const Owner_home_fourth = () => {
   const bubble3 = engTop3[2] || '김치전';
 
   return (
-    <div className='ownerhomefo_wrap container'>
+    <div id='ownerhomefo_wrap' className='container'>
       <div className="header">
         <button className="qr"><img src={qr_btn} alt="" /></button>
       </div>

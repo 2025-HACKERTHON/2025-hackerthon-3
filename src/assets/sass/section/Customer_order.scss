@@ -1,10 +1,8 @@
-.cusorder_wrap {
-    width: 393px;
-    height: 852px;
+#cusorder_wrap {
     padding-top: 0px;
 
     .header {
-        width: 392px;
+        width: 100%;
         height: 78px;
         background-color: var(--header);
         display: flex;

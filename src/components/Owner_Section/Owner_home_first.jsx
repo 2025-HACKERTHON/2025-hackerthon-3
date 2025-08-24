@@ -272,7 +272,7 @@ const Owner_home_first = () => {
   const top3 = langStats[2] || { language: '', percentage: 0 };
 
   return (
-    <div className='ownerhomef_wrap container'>
+    <div id='ownerhomef_wrap' className='container'>
       <div className="header">
         <button className="qr"><img src={qr_btn} alt="" /></button>
       </div>

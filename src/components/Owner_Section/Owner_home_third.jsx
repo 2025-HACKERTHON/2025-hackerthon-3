@@ -289,7 +289,7 @@ const Owner_home_third = () => {
   const bubble3 = bestMenus[2] || '김치전';
 
   return (
-    <div className='ownerhometh_wrap container'>
+    <div id='ownerhometh_wrap' className='container'>
       <div className="header">
         <button className="qr"><img src={qr_btn} alt="" /></button>
       </div>
