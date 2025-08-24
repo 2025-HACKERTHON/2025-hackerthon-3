@@ -103,6 +103,7 @@ const Cus_order = () => {
       try {
         const userId = 1;
         const res = await axios.get(`/api/store/${userId}/all`);
+        console.log(res)
         const menusRaw = res?.data?.menus;
         const menus = Array.isArray(menusRaw) ? menusRaw : Object.values(menusRaw || {});
         const index = {};
@@ -116,7 +117,10 @@ const Cus_order = () => {
           };
         });
         setMenuIndex(index);
-      } catch {}
+        
+      } catch(err){
+        console.log(err)
+      }
     })();
   }, []);
 
