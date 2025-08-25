@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 
 import Menu1 from './components/Customer_Section/Menu1';
 import Menu2 from './components/Customer_Section/Menu2';
@@ -14,14 +14,12 @@ import Menu_Table from './components/Customer_Section/Menu_Table';
 import Cus_options from './components/Customer_Section/Cus_options';
 import Cus_order from './components/Customer_Section/Cus_order';
 
+
 const App = () => {
   return (
-    <BrowserRouter>
-    <Routes>
-      {/* 루트(#/)는 index로 매핑 */}
-      <Route index element={<Menu />} />
 
-      {/* 나머지는 모두 상대 경로 */}
+    <Routes>
+      <Route path="/" element={<Menu />} />
       <Route path="Menu1" element={<Menu1 />} />
       <Route path="Menu2" element={<Menu2 />} />
       <Route path="Menu3" element={<Menu3 />} />
@@ -33,8 +31,9 @@ const App = () => {
       <Route path="menu_table" element={<Menu_Table />} />
       <Route path="cus_order" element={<Cus_order />} />
       <Route path="cus_options" element={<Cus_options />} />
+
     </Routes>
-    </BrowserRouter>
+
   );
 };
 

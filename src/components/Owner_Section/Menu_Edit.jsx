@@ -9,7 +9,7 @@ const MenuEditSection = ({ section, deleteSection }) => {
   const navigate = useNavigate();
 
   const handleEditClick = () => {
-    navigate(`/menu_edit_popup2/${section.id}`, { state: { sectionData: section } });
+    navigate(`/owner/menu_edit_popup2/${section.id}`, { state: { sectionData: section } });
   };
 
   return (
@@ -88,12 +88,11 @@ const Menu_Edit = () => {
     if (translationLang) {
       const fetchTranslatedData = async () => {
         try {
-          // GET 요청을 사용하여 번역된 데이터 가져오기
           const response = await axiosInstance.get(`/store/${userId}/settings/menu_info/lang/${translationLang}`);
           const translatedData = response.data;
 
           if (translatedData) {
-            navigate(`/menu_${translationLang}`, {
+            navigate(`/owner/menu_english`, {
               state: {
                 restaurantInfo: translatedData.restaurantInfo,
                 menuList: translatedData.menuList,
@@ -147,7 +146,7 @@ const Menu_Edit = () => {
     }
   };
 
-  const addMenuSection = () => navigate('/menu_edit_popup2');
+  const addMenuSection = () => navigate('/owner/menu_edit_popup2');
 
   const handleTranslateClick = (lang) => {
     setTranslationLang(lang);
@@ -160,7 +159,7 @@ const Menu_Edit = () => {
     <div id="Menu_Edit_Wrap" className="container">
       <header>
         <div className="icon">
-          <Link to='/owner_home_first'>
+          <Link to='/owner/owner_home_first'>
             <img src={back} className="back_icon" alt="뒤로가기" />
           </Link>
           <img src={qr} className="qr_icon" alt="QR 코드" />
@@ -173,7 +172,7 @@ const Menu_Edit = () => {
             <div className="title">MENU EDIT</div>
             <div className="store">
               <h1>{storeInfo.name}</h1>
-              <Link to='/menu_edit_popup1' state={{ initialInfo: storeInfo }}>
+              <Link to='/owner/menu_edit_popup1' state={{ initialInfo: storeInfo }}>
                 <div className="edit_icon">
                   <img src={edit} alt="편집" />
                 </div>

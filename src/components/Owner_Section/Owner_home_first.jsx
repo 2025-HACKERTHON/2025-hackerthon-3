@@ -1,6 +1,6 @@
 // src/components/Owner_Section/Owner_home_first.jsx
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import qr_btn from '../../assets/img/cus_order/qr_btn.svg';
 
@@ -10,7 +10,7 @@ const Owner_home_first = () => {
   const navigate = useNavigate();
 
   const PAGE_SLUGS = ['first', 'second', 'third', 'fourth', 'fifth'];
-  const pathFor = (n) => `/owner_home_${PAGE_SLUGS[(n - 1) % TOTAL_PAGES]}`;
+  const pathFor = (n) => `/owner/owner_home_${PAGE_SLUGS[(n - 1) % TOTAL_PAGES]}`;
   const goNext = () => navigate(pathFor((current % TOTAL_PAGES) + 1));
   const goPrev = () => navigate(pathFor(((current - 2 + TOTAL_PAGES) % TOTAL_PAGES) + 1));
 
@@ -423,7 +423,7 @@ const Owner_home_first = () => {
     // 1) 로컬 우선 반영 (화면 전환 즉시 보여주기)
     const saved = localStorage.getItem('restaurantName');
     if (saved) setStoreName(saved);
-    https://www.taekyeong.shop
+
     // 2) 서버 값으로 최종 동기화 (정확한 값 보장)
 
     axios.get(`https://www.taekyeong.shop/api/store/${userId}`)
@@ -444,12 +444,9 @@ const Owner_home_first = () => {
   return (
     <div id='ownerhomef_wrap' className='container'>
       <div className="header">
-        <button
-          className="qr"
-          onClick={() => navigate('/menu_edit')}
-        >
+        <Link className='qr' to='/owner/menu_edit'>
           <img src={qr_btn} alt="QR 버튼" />
-        </button>
+        </Link>
       </div>
 
       <div className="text">

@@ -66,7 +66,7 @@ const Menu_Edit_Popup2 = () => {
       
       // 저장이 성공하면 Menu_Edit 페이지로 돌아갑니다.
       // 이 페이지 이동으로 인해 Menu_Edit의 useEffect가 다시 실행되어 최신 목록을 불러옵니다.
-      navigate('/menu_edit');
+      navigate('/owner/menu_edit');
 
     } catch (error) {
       console.error('메뉴 저장/수정 실패:', error);
