@@ -11,8 +11,6 @@ const Menu_Edit_Popup2 = () => {
   const { id } = useParams();
   const location = useLocation();
 
-  console.log('수정 페이지가 받은 데이터:', location.state?.sectionData);
-
   // URL 파라미터로 넘어온 id가 있으면 '수정', 없으면 '추가' 모드
   const sectionId = id ? Number(id) : null;
   
@@ -22,16 +20,14 @@ const Menu_Edit_Popup2 = () => {
 
   const [info, setInfo] = useState(initialData);
   const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(initialData?.imageUrl ?? null); 
+  const [imagePreview, setImagePreview] = useState(initialData?.imageUrl ?? null);
   const fileInputRef = useRef();
 
-  // 입력창(input, textarea)의 내용이 변경될 때마다 info state를 업데이트하는 함수
   const handleChange = e => {
     const { name, value } = e.target;
     setInfo(prev => ({ ...prev, [name]: value }));
   };
 
-  // 이미지 파일이 선택됐을 때 미리보기를 만들고 파일 state를 업데이트하는 함수
   const handleImageChange = e => {
     const file = e.target.files[0];
     if (file) {
@@ -47,7 +43,7 @@ const Menu_Edit_Popup2 = () => {
   };
 
   // '완료' 버튼 클릭 시 서버로 데이터를 전송하는 함수
-  const onSave = async () => {
+   const onSave = async () => {
     const formData = new FormData();
     formData.append('nameKo', info.nameKo);
     formData.append('description', info.description);
@@ -56,27 +52,27 @@ const Menu_Edit_Popup2 = () => {
     if (imageFile) {
       formData.append('image', imageFile);
     }
+
     try {
-      let response;
-      if (sectionId) { // '수정' 모드일 경우 PUT 요청
+      if (sectionId) { // ID가 있으면 '수정' (PUT 요청)
         const API_URL = `/api/store/${userId}/settings/menu_info/id/${sectionId}`;
-        response = await axios.put(API_URL, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+        await axios.put(API_URL, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
         alert('메뉴가 성공적으로 수정되었습니다.');
-      } else { // '추가' 모드일 경우 POST 요청
+      } else { // ID가 없으면 '추가' (POST 요청)
         const API_URL = `/api/store/${userId}/settings/menu_info`;
-        response = await axios.post(API_URL, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+        await axios.post(API_URL, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
         alert('메뉴가 성공적으로 추가되었습니다.');
       }
+      
+      // 저장이 성공하면 Menu_Edit 페이지로 돌아갑니다.
+      // 이 페이지 이동으로 인해 Menu_Edit의 useEffect가 다시 실행되어 최신 목록을 불러옵니다.
+      navigate('/menu_edit');
 
-      if (response.status === 200 || response.status === 201) {
-        // 성공 시 메뉴 편집 페이지로 돌아가면, Menu_Edit의 useEffect가 재실행되어 목록이 새로고침됨
-        navigate('/menu_edit');
-      }
     } catch (error) {
       console.error('메뉴 저장/수정 실패:', error);
       alert('메뉴 저장/수정 중 오류가 발생했습니다.');
     }
-  }
+  };
 
   return (
     <div id="Menu_Edit_Popup2_Wrap" className="container">

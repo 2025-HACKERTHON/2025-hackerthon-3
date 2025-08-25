@@ -12,7 +12,7 @@ const MenuEditSection = ({ section, deleteSection }) => (
       <p>{section.description || '메뉴 설명을 해주세요. 자세하게 적을수록 손님들이 좋아해요.'}</p>
     </div>
     <div className="btn">
-      <Link to={`/menu_edit_popup2/${section.id}`}>
+      <Link to={`/menu_edit_popup2/${section.id}`} state={{ sectionData: section }}>
         <div className="edit">
           <button className="edit_btn">편집</button>
         </div>
@@ -48,7 +48,7 @@ const Menu_Edit = ({ }) => {
           detail: data.longDescription,
           tags: data.tags || [],
         });
-
+        
         localStorage.setItem('restaurantName', data.restaurantName || '');
 
         if (data && Array.isArray(data.menuList)) {
@@ -93,11 +93,24 @@ const Menu_Edit = ({ }) => {
   };
 
   // (deleteSection, addMenuSection 등 다른 함수는 기존과 동일)
-  const deleteSection = (id) => { /* ... 기존 삭제 API 로직 ... */ };
+   const deleteSection = async (id) => {
+    if (window.confirm('정말로 이 메뉴를 삭제하시겠습니까?')) {
+      try {
+        await axios.delete(`/api/store/${userId}/settings/menu_info/id/${id}`);
+        setMenuSections(prevSections => prevSections.filter(section => section.id !== id));
+        alert('메뉴가 삭제되었습니다.');
+      } catch (err) {
+        console.error('메뉴 삭제 실패:', err);
+        alert('메뉴 삭제 중 오류가 발생했습니다.');
+      }
+    }
+  };
+
   const addMenuSection = () => navigate('/menu_edit_popup2');
 
   if (loading) return <div>로딩 중...</div>;
   if (error) return <div>에러 발생: {error.message}</div>;
+
 
   return (
     <div id="Menu_Edit_Wrap" className="container">

@@ -48,7 +48,7 @@ function NumberSelector() {
           style={{
             width:57, height:57, borderRadius:'50%', background:'#58C9F3',
             display:'flex', justifyContent:'center', alignItems:'center',
-            fontSize:48, cursor:'pointer'
+            fontSize:48, cursor:'pointer',
           }}
           onClick={() => setMode('selector')}
         >
