@@ -3,7 +3,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import Onboarding from './components/Owner_Section/Onboarding'
 import Login from './components/Owner_Section/Login'
 import Signup from './components/Owner_Section/Signup'
-import Storeinfo from './components/Owner_Section/Store_info'
+import Store_info from './components/Owner_Section/Store_info'
 import Menu1 from './components/Customer_Section/Menu1'
 import Menu2 from './components/Customer_Section/Menu2'
 import Menu3 from './components/Customer_Section/Menu3'
@@ -29,7 +29,7 @@ const App = () => {
       <Route path='/Onboarding' element={<Onboarding/>} />
       <Route path='/Login' element={<Login/>} />
       <Route path='/Signup' element={<Signup/>} />
-      <Route path='/Storeinfo' element={<Storeinfo/>} />
+      <Route path='/Storeinfo' element={<Store_info/>} />
       <Route path='/Menu1' element={<Menu1/>} />
       <Route path='/Menu2' element={<Menu2/>} />
       <Route path='/Menu3' element={<Menu3/>} />

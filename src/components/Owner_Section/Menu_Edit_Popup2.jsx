@@ -1,24 +1,37 @@
-import React from 'react'
-import back from '../../assets/img/owner_menu_edit/back.svg'
-import qr from '../../assets/img/owner_menu_edit/qr.svg'
-import edit from '../../assets/img/owner_menu_edit/edit.svg'
-import { useState, useRef, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import axios from 'axios'
+import React, { useState, useRef } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import axios from 'axios';
+import back from '../../assets/img/owner_menu_edit/back.svg';
+import qr from '../../assets/img/owner_menu_edit/qr.svg';
+import edit from '../../assets/img/owner_menu_edit/edit.svg';
 
-const Menu_Edit_Popup2 = ({ storeInfo, saveStoreData, selectedTags, menuSections, updateMenuSection, saveImage, imagePreviewUrl }) => {
-
-  const userId='1';
+const Menu_Edit_Popup2 = () => {
+  const userId = '1';
   const navigate = useNavigate();
   const { id } = useParams();
-  const sectionId = id ? Number(id) : null; // URL에서 메뉴 ID를 가져옴
-  const section = sectionId ? menuSections.find(s => s.id === sectionId) : null;
+  const location = useLocation();
 
+  console.log('수정 페이지가 받은 데이터:', location.state?.sectionData);
+
+  // URL 파라미터로 넘어온 id가 있으면 '수정', 없으면 '추가' 모드
+  const sectionId = id ? Number(id) : null;
+  
+  // '수정' 모드일 경우, location.state에 담겨온 데이터(sectionData)를 초기값으로 사용
+  // '추가' 모드일 경우, 빈 값으로 시작
+  const initialData = location.state?.sectionData || { nameKo: '', description: '', price: '' };
+
+  const [info, setInfo] = useState(initialData);
   const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(section?.imagePreviewUrl ?? null);
-  const [info, setInfo] = useState(section || { nameKo: '', description: '', price: '' });
+  const [imagePreview, setImagePreview] = useState(initialData?.imageUrl ?? null); 
   const fileInputRef = useRef();
 
+  // 입력창(input, textarea)의 내용이 변경될 때마다 info state를 업데이트하는 함수
+  const handleChange = e => {
+    const { name, value } = e.target;
+    setInfo(prev => ({ ...prev, [name]: value }));
+  };
+
+  // 이미지 파일이 선택됐을 때 미리보기를 만들고 파일 state를 업데이트하는 함수
   const handleImageChange = e => {
     const file = e.target.files[0];
     if (file) {
@@ -28,15 +41,12 @@ const Menu_Edit_Popup2 = ({ storeInfo, saveStoreData, selectedTags, menuSections
     }
   };
 
+  // '이미지 추가' 버튼 클릭 시 숨겨진 file input을 클릭해주는 함수
   const handleButtonClick = () => {
-    if (fileInputRef.current) fileInputRef.current.click();
+    fileInputRef.current.click();
   };
 
-  const handleChange = e => {
-    const { name, value } = e.target;
-    setInfo(prev => ({ ...prev, [name]: value }));
-  };
-
+  // '완료' 버튼 클릭 시 서버로 데이터를 전송하는 함수
   const onSave = async () => {
     const formData = new FormData();
     formData.append('nameKo', info.nameKo);
@@ -46,46 +56,27 @@ const Menu_Edit_Popup2 = ({ storeInfo, saveStoreData, selectedTags, menuSections
     if (imageFile) {
       formData.append('image', imageFile);
     }
-
     try {
       let response;
-      // sectionId가 있으면 '수정(PUT)', 없으면 '추가(POST)'
-      if (sectionId) {
-        // --- 메뉴 수정 (PUT 요청) ---
+      if (sectionId) { // '수정' 모드일 경우 PUT 요청
         const API_URL = `/api/store/${userId}/settings/menu_info/id/${sectionId}`;
-        response = await axios.put(API_URL, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        response = await axios.put(API_URL, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
         alert('메뉴가 성공적으로 수정되었습니다.');
-      } else {
-        // --- 메뉴 추가 (POST 요청) ---
+      } else { // '추가' 모드일 경우 POST 요청
         const API_URL = `/api/store/${userId}/settings/menu_info`;
-        response = await axios.post(API_URL, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        response = await axios.post(API_URL, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
         alert('메뉴가 성공적으로 추가되었습니다.');
       }
 
       if (response.status === 200 || response.status === 201) {
+        // 성공 시 메뉴 편집 페이지로 돌아가면, Menu_Edit의 useEffect가 재실행되어 목록이 새로고침됨
         navigate('/menu_edit');
       }
     } catch (error) {
       console.error('메뉴 저장/수정 실패:', error);
       alert('메뉴 저장/수정 중 오류가 발생했습니다.');
     }
-  };
-
-  useEffect(() => {
-    if (section) {
-      setInfo({
-        nameKo: section.nameKo || '',
-        description: section.description || '',
-        price: section.price || '',
-      });
-      setImagePreview(section.imagePreviewUrl || null);
-    }
-  }, [section]);
-
+  }
 
   return (
     <div id="Menu_Edit_Popup2_Wrap" className="container">
@@ -95,7 +86,7 @@ const Menu_Edit_Popup2 = ({ storeInfo, saveStoreData, selectedTags, menuSections
             {imagePreview ? <img src={imagePreview} alt="업로드 이미지" /> : <>이미지를<br />추가해주세요.</>}
         </div>
          <div className="popup_content">
-            <input type="text" className="name" name='name' value={info.name} onChange={handleChange} placeholder='메뉴명' />
+            <input type="text" className="name" name='nameKo' value={info.nameKo} onChange={handleChange} placeholder='메뉴명' />
             <textarea name="description" id="" className="info" value={info.description} onChange={handleChange} placeholder='메뉴 설명'></textarea>
             <input type="text" className="price1" name='price' value={info.price} onChange={handleChange} placeholder='메뉴 가격' />
             <div className="price2">원</div>
