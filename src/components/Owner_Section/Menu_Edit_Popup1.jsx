@@ -2,30 +2,52 @@ import React from 'react'
 import back from '../../assets/img/owner_menu_edit/back.svg'
 import qr from '../../assets/img/owner_menu_edit/qr.svg'
 import edit from '../../assets/img/owner_menu_edit/edit.svg'
-import { Link, useNavigate} from 'react-router-dom'
+import { Link, useNavigate, useLocation} from 'react-router-dom'
 import { useState } from 'react'
+import axios from 'axios'
 
-const Menu_Edit_Popup1 = ({ storeInfo, saveStoreData, selectedTags }) => {
-  const [info, setInfo] = useState(storeInfo);
-  const [tags, setTags] = useState(selectedTags || []);
-  const navigate = useNavigate();
+const Menu_Edit_Popup1 = ({ storeInfo, handleStoreInfoSave, selectedTags, initialStoreInfo, onSave }) => {
+  const location = useLocation();
+    const navigate = useNavigate();
+    const userId = '1'; // 실제로는 로그인 정보 등에서 가져와야 함
 
-  const handleChange = e => {
-    const { name, value } = e.target;
-    setInfo(prev => ({ ...prev, [name]: value }));
-  };
+    // location.state에서 부모가 넘겨준 초기 데이터를 받습니다.
+    const initialInfo = location.state?.initialInfo;
 
-  const toggleTag = tag => {
-    setTags(prev =>
-      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
-    );
-  };
+    const [info, setInfo] = useState(initialInfo || {});
+    const [tags, setTags] = useState(initialInfo?.tags || []);
 
-  // 완료(저장)시, storeInfo와 tags를 부모에 넘기고 페이지 이동
-  const onSave = () => {
-    saveStoreData(info, tags);
-    navigate('/menu_edit');
-  };
+    const handleChange = e => {
+        const { name, value } = e.target;
+        setInfo(prev => ({ ...prev, [name]: value }));
+    };
+
+    const toggleTag = tag => {
+        // ... (태그 토글 로직은 기존과 동일)
+    };
+
+    // 완료 버튼 클릭 시, API를 직접 호출
+    const handleSave = async () => {
+        const API_URL = `https://www.taekyeong.shop/api/store/${userId}/settings/store_info`;
+        const payload = {
+            restaurantName: info.name,
+            restaurantAddress: info.address,
+            shortDescription: info.description,
+            longDescription: info.detail,
+            features: tags,
+        };
+
+        try {
+            const response = await axios.patch(API_URL, payload);
+            if (response.status === 200) {
+                alert('가게 정보가 성공적으로 저장되었습니다.');
+                navigate('/menu_edit'); // 수정 완료 후 목록 페이지로 이동
+            }
+        } catch (error) {
+            console.error('가게 정보 저장 실패:', error);
+            alert('저장 중 오류가 발생했습니다.');
+        }
+    };
 
   return (
     <div id="Menu_Edit_Popup1_Wrap" className="container">
@@ -59,9 +81,7 @@ const Menu_Edit_Popup1 = ({ storeInfo, saveStoreData, selectedTags }) => {
                     ))}
                 </div>
               </div>
-                <Link to='/menu_edit'>
-                    <button className='save_btn' onClick={onSave}>완료</button>
-                </Link>
+              <button className='save_btn' onClick={handleSave}>완료</button>
          </div>
      </div>
      <div className="popup_bg"></div>

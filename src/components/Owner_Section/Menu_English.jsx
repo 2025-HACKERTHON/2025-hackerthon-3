@@ -20,9 +20,9 @@ const Menu_English = () => {
   };
 
   const handleLanguageSelect = (lang) => {
-    if (lang === "영어") navigate("/menu_english");
-    if (lang === "중국어") navigate("/menu_chinese");
-    if (lang === "일본어") navigate("/menu_japanese");
+    if (lang === "영어") navigate("/owner/menu_english");
+    if (lang === "중국어") navigate("/owner/menu_chinese");
+    if (lang === "일본어") navigate("/owner/menu_japanese");
 
     setShowLanguageMenu(false);
   };

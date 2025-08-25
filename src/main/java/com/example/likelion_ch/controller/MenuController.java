@@ -1,3 +1,4 @@
+
 package com.example.likelion_ch.controller;
 
 import com.example.likelion_ch.dto.*;
@@ -26,23 +27,20 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
 import java.util.stream.Collectors;
 
 @Slf4j
-@RestController
-@RequestMapping("/api/store")
+@Service
 @RequiredArgsConstructor
-@Tag(name = "Menu API", description = "메뉴 관리 API")
-public class MenuController {
+public class MenuService {
 
     private final MenuService menuService;
     private final StoreService storeService;
@@ -51,46 +49,96 @@ public class MenuController {
     @Autowired
     private GeminiTranslationService translationService;
 
-    // 언어별 메뉴 조회 (이미 번역됨)
-    @GetMapping("/{userId}/settings/menu_info/{langCode}")
-    public ResponseEntity<List<MenuInfo>> getTranslatedMenuInfo(
-            @PathVariable Long userId,
-            @PathVariable String langCode) {
+    // 주문 생성
+    public void createOrder(CreateOrderRequest request) {
+        Menu menu = menuRepository.findById(request.getMenuId())
+                .orElseThrow(() -> new RuntimeException("메뉴를 찾을 수 없습니다."));
 
-        log.info("번역 메뉴 조회 요청: 사용자={}, 언어={}", userId, langCode);
+        OrderItem orderItem = new OrderItem();
+        orderItem.setMenu(menu);
+        orderItem.setQuantity(request.getQuantity());
+        orderItem.setPrice(menu.getPrice().multiply(BigDecimal.valueOf(request.getQuantity())));
 
-        try {
-            // 기존 메뉴만 조회
-            List<MenuInfo> menuInfoList = menuService.getExistingMenusByLanguage(userId, langCode);
-
-            log.info("기존 메뉴 조회 완료: 사용자={}, 언어={}, 메뉴 수={}", userId, langCode, menuInfoList.size());
-
-            return ResponseEntity.ok(menuInfoList);
-
-        } catch (IllegalArgumentException e) {
-            log.warn("잘못된 요청: {}", e.getMessage());
-            return ResponseEntity.badRequest().build();
-
-        } catch (Exception e) {
-            log.error("메뉴 조회 중 오류 발생: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError().build();
-        }
+        orderItemRepository.save(orderItem);
     }
 
     // 가게 정보 + 메뉴 리스트
-    @GetMapping("/{userId}")
-    @Operation(summary = "가게 정보와 메뉴 조회", description = "가게 정보와 함께 메뉴 목록을 조회합니다.")
-    public ResponseEntity<StoreResponse> getStoreWithMenu(@PathVariable Long userId) {
-        return ResponseEntity.ok(menuService.getStoreWithMenu(userId));
+    public StoreResponse getStoreWithMenu(Long userId) {
+        SiteUser user = siteUserRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+        List<Menu> menuList = menuRepository.findByUser(user);
+
+        return new StoreResponse(
+                user.getRestaurantName(),
+                user.getRestaurantAddress(),
+                user.getShortDescription(),
+                user.getLongDescription(),
+                menuList
+        );
+    }
+
+    // top 메뉴 조회
+    public TopMenuResponse getTopMenu(Long userId) {
+        List<MenuInfo> top3 = orderItemRepository.findTopMenu(userId, Pageable.ofSize(3));
+        return new TopMenuResponse(top3);
+    }
+
+    // 언어 기반 top 메뉴 조회
+    public TopMenuResponse getTopMenuByLanguage(Long userId, String lang) {
+        List<MenuInfo> top3ByLang = orderItemRepository.findTopMenuByLanguage(userId, lang, Pageable.ofSize(3));
+        return new TopMenuResponse(top3ByLang);
     }
 
     // 전체 메뉴 조회
-    @GetMapping("/{userId}/settings/menu_info")
-    @Operation(summary = "전체 메뉴 조회", description = "사용자의 모든 메뉴를 조회합니다.")
-    public ResponseEntity<List<MenuResponse>> getAllMenus(@PathVariable Long userId) {
-        List<MenuResponse> menus = menuService.getMenusByUser(userId);
-        return ResponseEntity.ok(menus);
+    public List<MenuInfo> getAllMenusForStore(Long userId) {
+        SiteUser user = siteUserRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+        List<Menu> menuList = menuRepository.findByUser(user);
+
+        return menuList.stream()
+                .map(menu -> MenuInfo.builder()
+                        .nameKo(menu.getMenuName())
+                        .description(menu.getDescription())
+                        .price(menu.getPrice())
+                        .build())
+                .toList();
     }
+
+    // 전체 메뉴 조회 (MenuResponse)
+    public List<MenuResponse> getMenusByUser(Long userId) {
+        SiteUser user = siteUserRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+        return menuRepository.findByUser(user).stream()
+                .map(menu -> MenuResponse.builder()
+                        .id(menu.getId())
+                        .nameKo(menu.getNameKo())
+                        .description(menu.getDescription())
+                        .price(menu.getPrice())
+                        .imageUrl(menu.getImageUrl())
+                        .userId(user.getId())
+                        .createdAt(menu.getCreatedAt())
+                        .updatedAt(menu.getUpdatedAt())
+                        .build())
+                .toList();
+    }
+
+    // 단일 메뉴 조회
+    public MenuResponse getMenuById(Long userId, Integer userMenuId) {
+        Menu menu = menuRepository.findByUserMenuIdAndUser_Id(userMenuId, userId)
+                .orElseThrow(() -> new RuntimeException("사용자 소유의 메뉴가 아닙니다."));
+
+        return MenuResponse.builder()
+                .id(menu.getId())
+                .userMenuId(menu.getUserMenuId())
+                .nameKo(menu.getMenuName())
+                .description(menu.getDescription())
+                .price(menu.getPrice())
+                .imageUrl(menu.getImageUrl())
+                .userId(menu.getUser() != null ? menu.getUser().getId() : null)
+                .build();
+    }
+
 
     // 메뉴 등록 (이미지 포함 가능)
     @PostMapping(value = "/{userId}/settings/menu_info", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -119,13 +167,31 @@ public class MenuController {
         return ResponseEntity.ok(menuService.getTopMenu(userId));
     }
 
-    // 언어 기반 추천 메뉴 TOP3
-    @GetMapping("/{userId}/recommend")
-    public ResponseEntity<TopMenuResponse> getRecommendedMenus(
-            @PathVariable Long userId,
-            @RequestParam String lang) {
-        return ResponseEntity.ok(menuService.getTopMenuByLanguage(userId, lang));
+    // 메뉴 수정
+    public MenuResponse updateMenu(Long userId, Integer userMenuId, MenuRequest request) {
+        SiteUser user = siteUserRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+        Menu menu = menuRepository.findByUserAndUserMenuId(user, userMenuId)
+                .orElseThrow(() -> new RuntimeException("사용자 소유의 메뉴가 아닙니다."));
+
+        menu.setNameKo(request.getMenuName());
+        menu.setDescription(request.getMenuDescription());
+        menu.setPrice(request.getMenuPrice());
+
+        menuRepository.save(menu);
+
+        return MenuResponse.builder()
+                .id(menu.getId())
+                .userMenuId(menu.getUserMenuId())
+                .nameKo(menu.getNameKo())
+                .description(menu.getDescription())
+                .price(menu.getPrice())
+                .imageUrl(menu.getImageUrl())
+                .userId(user.getId())
+                .build();
     }
+
 
     // 전체 메뉴 + 가게 정보 조회
     @GetMapping("/{userId}/all")
@@ -149,8 +215,22 @@ public class MenuController {
                 features
         );
 
-        return ResponseEntity.ok(response);
+
+        return MenuResponse.builder()
+                .id(menu.getId())
+                .userMenuId(menu.getUserMenuId())
+                .nameKo(menu.getNameKo())
+                .description(menu.getDescription())
+                .price(menu.getPrice())
+                .imageUrl(menu.getImageUrl())
+                .userId(user.getId())
+                .build();
     }
+
+    // 메뉴 삭제
+    public void deleteMenu(Long userId, Integer userMenuId) {
+        SiteUser user = siteUserRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
 
     // QRCode
@@ -161,38 +241,55 @@ public class MenuController {
             // QR코드에 넣을 URL (예: 해당 가게 상세 페이지)
             String storeUrl = "https://www.taekyeong.shop/api/store/" + userId;
 
-            BufferedImage qrImage = QRCodeGenerator.generateQRCodeImage(storeUrl, 250, 250);
 
-            // BufferedImage -> byte[]
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ImageIO.write(qrImage, "PNG", baos);
-            byte[] imageBytes = baos.toByteArray();
-
-            return ResponseEntity
-                    .ok()
-                    .header("Content-Type", "image/png")
-                    .body(imageBytes);
-        } catch (Exception e) {
-            return ResponseEntity.status(500).build();
-        }
+        menuRepository.delete(menu);
     }
 
-    // 단일 메뉴 조회
-    @GetMapping("/{userId}/settings/menu_info/id/{userMenuId}")
-    @Operation(summary = "단일 메뉴 조회", description = "사용자의 특정 메뉴 정보를 조회합니다.")
-    public ResponseEntity<MenuResponse> getMenuById(
-            @PathVariable Long userId,
-            @PathVariable Integer userMenuId) {
-        try {
-            MenuResponse menu = menuService.getMenuById(userId, userMenuId);
-            return ResponseEntity.ok(menu);
-        } catch (RuntimeException e) {
-            log.warn("메뉴 조회 실패: {}", e.getMessage());
-            return ResponseEntity.notFound().build();
-        } catch (Exception e) {
-            log.error("메뉴 조회 중 오류 발생: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError().build();
+    // 메뉴 삭제 (이미지 포함)
+    public void deleteMenuWithImage(Long userId, Integer userMenuId) {
+        SiteUser user = siteUserRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+        Menu menu = menuRepository.findByUserAndUserMenuId(user, userMenuId)
+                .orElseThrow(() -> new RuntimeException("사용자 소유의 메뉴가 아닙니다."));
+
+        // 이미지 파일이 존재하면 S3에서 삭제
+        if (menu.getImageUrl() != null) {
+            try {
+                s3Service.deleteImage(menu.getImageUrl());
+                log.info("이미지 파일 삭제 요청: {}", menu.getImageUrl());
+            } catch (Exception e) {
+                log.error("이미지 파일 삭제 실패: {}", e.getMessage());
+            }
         }
+
+        menuRepository.delete(menu);
+    }
+
+    /**
+     * 특정 사용자의 메뉴 정보를 요청된 언어로 조회
+     * 해당 언어로 번역된 메뉴가 없으면 자동 번역 후 저장
+     */
+    @Transactional
+    public List<MenuInfo> getMenuInfoByLanguage(Long userId, String langCode) {
+        // 사용자 존재 여부 확인
+        SiteUser user = siteUserRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+
+        // 지원 언어 검증
+        validateLanguageCode(langCode);
+
+        // 해당 언어로 이미 번역된 메뉴가 있는지 확인
+        List<Menu> existingMenus = menuRepository.findByUserIdAndLanguage(userId, langCode);
+
+        if (!existingMenus.isEmpty()) {
+            // 이미 번역된 메뉴가 있으면 바로 반환
+            log.info("사용자 {}의 {} 언어 메뉴 {}개를 조회했습니다.", userId, langCode, existingMenus.size());
+            return existingMenus.stream()
+                    .map(this::convertToMenuInfo)
+                    .collect(Collectors.toList());
+        }
+
     }
 
     // 메뉴 수정 (이미지 포함)
@@ -223,25 +320,18 @@ public class MenuController {
         } catch (Exception e) {
             log.error("메뉴 수정 중 오류 발생: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().build();
-        }
-    }
 
-    // 메뉴 삭제 (이미지 포함)
-    @DeleteMapping("/{userId}/settings/menu_info/id/{userMenuId}")
-    @Operation(summary = "메뉴 삭제", description = "메뉴와 관련 이미지를 삭제합니다.")
-    public ResponseEntity<Void> deleteMenu(
-            @PathVariable Long userId,
-            @PathVariable Integer userMenuId) {
-        try {
-            menuService.deleteMenuWithImage(userId, userMenuId);
-            return ResponseEntity.noContent().build();
-        } catch (RuntimeException e) {
-            log.warn("메뉴 삭제 실패: {}", e.getMessage());
-            return ResponseEntity.notFound().build();
-        } catch (Exception e) {
-            log.error("메뉴 삭제 중 오류 발생: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError().build();
         }
+
+        // 한국어 메뉴를 요청된 언어로 번역하고 저장
+        List<MenuInfo> translatedMenus = new ArrayList<>();
+        for (Menu koreanMenu : koreanMenus) {
+            Menu translatedMenu = translateAndSaveMenu(koreanMenu, langCode);
+            translatedMenus.add(convertToMenuInfo(translatedMenu));
+        }
+
+        log.info("사용자 {}의 메뉴 {}개를 {} 언어로 번역하여 저장했습니다.", userId, translatedMenus.size(), langCode);
+        return translatedMenus;
     }
     // 모든 언어 번역 및 저장
     @GetMapping("/{userId}/settings/menu_info/lang")
@@ -254,6 +344,7 @@ public class MenuController {
         if (koMenus.isEmpty()) {
             return ResponseEntity.ok(List.of());
         }
+
 
         // 3. 각 메뉴 번역 및 DB 저장
         List<MenuResponse> translatedMenus = koMenus.stream().map(menu -> {
@@ -312,6 +403,7 @@ public class MenuController {
         Integer tableCount = restaurantInfo.getTableCount();
         List<String> features = restaurantInfo.getFeatures();
 
+
         // 한국어가 아닌 경우 번역 시도
         if (!"ko".equals(langCode)) {
             try {
@@ -324,27 +416,25 @@ public class MenuController {
                 if (longDescription != null && !longDescription.isEmpty()) {
                     longDescription = translateText(longDescription, langCode);
                 }
-                // features도 번역
-                if (features != null && !features.isEmpty()) {
-                    features = features.stream()
-                            .map(feature -> translateText(feature, langCode))
-                            .toList();
-                }
             } catch (Exception e) {
                 log.warn("식당 정보 번역 실패: {}", e.getMessage());
                 // 번역 실패 시 원본 텍스트 사용
             }
         }
 
+        // features 조회 (현재는 기본값 사용, 필요시 StoreFeature 엔티티 활용)
+        List<String> features = List.of("Free Wi-Fi", "Parking available"); // TODO: 실제 features 조회 로직 구현
+
         return RestaurantInfoResponse.builder()
                 .restaurantName(restaurantName)
                 .restaurantAddress(restaurantAddress)
                 .shortDescription(shortDescription)
                 .longDescription(longDescription)
-                .tableCount(tableCount)
+                .tableCount(10) // TODO: 실제 테이블 수 조회 로직 구현
                 .features(features)
                 .build();
     }
+
 
     // GeminiTranslationService를 사용하는 번역
     private String translateText(String text, String langCode) {
@@ -356,6 +446,7 @@ public class MenuController {
     }
 
     // 언어코드를 언어명으로 변경
+
     private String getTargetLanguageName(String langCode) {
         return switch (langCode.toLowerCase()) {
             case "en" -> "영어";
@@ -364,6 +455,7 @@ public class MenuController {
             default -> throw new IllegalArgumentException("지원하지 않는 언어 코드입니다: " + langCode);
         };
     }
+
     @Transactional
     public List<MenuResponse> getMenuByUserIdAndLang(Long userId, String langCode) {
         List<Menu> existingMenus = menuRepository.findByUserIdAndLanguage(userId, langCode);
