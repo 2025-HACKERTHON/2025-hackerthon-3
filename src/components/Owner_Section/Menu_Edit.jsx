@@ -92,7 +92,7 @@ const Menu_Edit = () => {
           const translatedData = response.data;
 
           if (translatedData) {
-            navigate(`/owner/menu_english`, {
+            navigate(`/menu_en`, {
               state: {
                 restaurantInfo: translatedData.restaurantInfo,
                 menuList: translatedData.menuList,

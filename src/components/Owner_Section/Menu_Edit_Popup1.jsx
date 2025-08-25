@@ -41,7 +41,7 @@ const Menu_Edit_Popup1 = ({ storeInfo, handleStoreInfoSave, selectedTags, initia
             const response = await axios.patch(API_URL, payload);
             if (response.status === 200) {
                 alert('가게 정보가 성공적으로 저장되었습니다.');
-                navigate('/owner/menu_edit'); // 수정 완료 후 목록 페이지로 이동
+                navigate('/menu_edit'); // 수정 완료 후 목록 페이지로 이동
             }
         } catch (error) {
             console.error('가게 정보 저장 실패:', error);

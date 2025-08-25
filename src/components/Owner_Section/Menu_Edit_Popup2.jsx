@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import back from '../../assets/img/owner_menu_edit/back.svg';
@@ -8,65 +8,85 @@ import edit from '../../assets/img/owner_menu_edit/edit.svg';
 const Menu_Edit_Popup2 = () => {
   const userId = '17';
   const navigate = useNavigate();
-  const { id } = useParams();
+  const { id } = useParams(); // URL에서 id 파라미터를 가져옵니다. 예: /.../123 또는 /.../new
   const location = useLocation();
 
-  // URL 파라미터로 넘어온 id가 있으면 '수정', 없으면 '추가' 모드
-  const sectionId = id ? Number(id) : null;
-  
-  // '수정' 모드일 경우, location.state에 담겨온 데이터(sectionData)를 초기값으로 사용
-  // '추가' 모드일 경우, 빈 값으로 시작
-  const initialData = location.state?.sectionData || { nameKo: '', description: '', price: '' };
+  // 'id'가 'new'가 아니면 수정 모드, 'new'이면 추가 모드
+  const isEditMode = id !== 'new';
+  const sectionId = isEditMode ? Number(id) : null;
 
+  // 수정 모드일 때는 location.state에서, 추가 모드일 때는 빈 값으로 초기화
+  const initialData = isEditMode ? location.state?.sectionData : { nameKo: '', description: '', price: '', imageUrl: null };
+  
   const [info, setInfo] = useState(initialData);
   const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(initialData?.imageUrl ?? null);
+  const [imagePreview, setImagePreview] = useState(initialData?.imageUrl);
+  const [restaurantName, setRestaurantName] = useState('');
   const fileInputRef = useRef();
+
+  // 페이지 로드 시 localStorage에서 가게 이름을 가져옵니다.
+  useEffect(() => {
+    setRestaurantName(localStorage.getItem('restaurantName') || '가게 이름');
+  }, []);
+
 
   const handleChange = e => {
     const { name, value } = e.target;
-    setInfo(prev => ({ ...prev, [name]: value }));
+    // 가격 필드는 숫자만 입력되도록 처리
+    if (name === 'price') {
+      const numericValue = value.replace(/[^0-9]/g, '');
+      setInfo(prev => ({ ...prev, [name]: numericValue }));
+    } else {
+      setInfo(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleImageChange = e => {
     const file = e.target.files[0];
     if (file) {
-      const previewUrl = URL.createObjectURL(file);
       setImageFile(file);
-      setImagePreview(previewUrl);
+      setImagePreview(URL.createObjectURL(file));
     }
   };
 
-  // '이미지 추가' 버튼 클릭 시 숨겨진 file input을 클릭해주는 함수
   const handleButtonClick = () => {
     fileInputRef.current.click();
   };
+  
+  const handleGoBack = () => {
+    navigate(-1); // 이전 페이지로 이동
+  };
 
-  // '완료' 버튼 클릭 시 서버로 데이터를 전송하는 함수
-   const onSave = async () => {
+  const onSave = async () => {
+    if (!info.nameKo || !info.price) {
+        alert('메뉴명과 가격은 필수 항목입니다.');
+        return;
+    }
+      
     const formData = new FormData();
     formData.append('nameKo', info.nameKo);
     formData.append('description', info.description);
     formData.append('price', info.price);
-    
+
+
     if (imageFile) {
       formData.append('image', imageFile);
     }
 
     try {
-      if (sectionId) { // ID가 있으면 '수정' (PUT 요청)
+      if (isEditMode) { // 수정 모드 (PUT 요청)
         const API_URL = `https://www.taekyeong.shop/api/store/${userId}/settings/menu_info/id/${sectionId}`;
         await axios.put(API_URL, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
         alert('메뉴가 성공적으로 수정되었습니다.');
-      } else { // ID가 없으면 '추가' (POST 요청)
+      } else { // 추가 모드 (POST 요청)
         const API_URL = `https://www.taekyeong.shop/api/store/${userId}/settings/menu_info`;
         await axios.post(API_URL, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
         alert('메뉴가 성공적으로 추가되었습니다.');
       }
-      
-      // 저장이 성공하면 Menu_Edit 페이지로 돌아갑니다.
-      // 이 페이지 이동으로 인해 Menu_Edit의 useEffect가 다시 실행되어 최신 목록을 불러옵니다.
-      navigate('/owner/menu_edit');
+
+      // 저장 성공 후, 메인 메뉴 편집 페이지로 돌아갑니다.
+      // 이 페이지는 돌아가면 useEffect를 통해 자동으로 최신 목록을 불러옵니다.
+      navigate('/menu_edit');
 
     } catch (error) {
       console.error('메뉴 저장/수정 실패:', error);
@@ -76,75 +96,51 @@ const Menu_Edit_Popup2 = () => {
 
   return (
     <div id="Menu_Edit_Popup2_Wrap" className="container">
-     <div className="popup">
-       <div className="popup_img">
-        <input type="file" accept="image/*" ref={fileInputRef} style={{ display: "none" }} onChange={handleImageChange} />
-            {imagePreview ? <img src={imagePreview} alt="업로드 이미지" /> : <>이미지를<br />추가해주세요.</>}
+      <div className="popup">
+        <div className="popup_img" onClick={handleButtonClick} style={{ cursor: 'pointer' }}>
+          <input
+            type="file"
+            accept="image/*"
+            ref={fileInputRef}
+            style={{ display: 'none' }}
+            onChange={handleImageChange}
+          />
+          {imagePreview ? <img src={imagePreview} alt="업로드 이미지" /> : <>이미지를<br />추가해주세요.</>}
         </div>
-         <div className="popup_content">
-            <input type="text" className="name" name='nameKo' value={info.nameKo} onChange={handleChange} placeholder='메뉴명' />
-            <textarea name="description" id="" className="info" value={info.description} onChange={handleChange} placeholder='메뉴 설명'></textarea>
-            <input type="text" className="price1" name='price' value={info.price} onChange={handleChange} placeholder='메뉴 가격' />
-            <div className="price2">원</div>
-         </div>
-         <div className="popup_btn">
-            <button className="btn1" onClick={onSave} >완료</button>
-            <button className="btn2" type='button' onClick={handleButtonClick}>이미지 추가</button>
-         </div>
-     </div>
-     <div className="popup_bg"></div>
-        <header>
-          <div className="icon">
-            <img src={back} className="back_icon" alt="" />
-            <img src={qr} className="qr_icon" alt="" />
-          </div>
-          <div className="header"></div>
-        </header>
-        <main>
-          <div className="store_info">
-            <div className="title">MENU EDIT</div>
-            <div className="store">
-              <h1>한그릇</h1>
-              <div className="edit_icon">
-                    <img src={edit} alt="" />
-                </div>
-            </div>
-            <p>한국의 정을 담은 따듯한 한 끼</p>
-            <div className="text">
-              “한그릇”은 계절마다 바뀌는 따끈한 국물 요리와 밥
-              <br />한 그릇을 정성스럽게 차려내는 따뜻한 동네 식당입니다.
-            </div>
-            <div className="map">서울 서대문구 홍제5동 하나빌딩 1층</div>
-            <div className="tags">
-              <div className="tag">매운맛 조절 가능</div>
-              <div className="tag">비건 변경 가능</div>
-            </div>
-          </div>
-          <div className="title">메뉴 편집</div>
-          <div className="menu_edit">
-                <div className="menu_section">
-                    <div className="text">
-                        <h1>메뉴명을 적어주세요!</h1>
-                        <p>메뉴 설명을 해주세요.
-                            <br />자세하게 적을수록 손님들이 좋아해요.
-                        </p>
-                    </div>
-                    <div className="edit">
-                        <button className="edit_btn">
-                        편집
-                        </button>
-                    </div>
-                </div>
-                <button className="menu_add">
-                    +
-                </button>
-                <button className="tanslation_btn">
-                    번역하기
-                </button>
-          </div>
-        </main>
+        <div className="popup_content">
+          <input type="text" className="name" name="nameKo" value={info.nameKo} onChange={handleChange} placeholder="메뉴명" />
+          <textarea name="description" className="info" value={info.description} onChange={handleChange} placeholder="메뉴 설명"></textarea>
+          <input type="text" className="price1" name="price" value={info.price} onChange={handleChange} placeholder="메뉴 가격" />
+          <div className="price2">원</div>
         </div>
+        <div className="popup_btn">
+          <button className="btn1" onClick={onSave}>완료</button>
+          <button className="btn2" type="button" onClick={handleGoBack}>취소</button>
+        </div>
+      </div>
+
+      <div className="popup_bg"></div>
+
+      <header>
+        <div className="icon">
+          <img src={back} className="back_icon" alt="뒤로가기" onClick={handleGoBack} style={{ cursor: 'pointer' }} />
+          <img src={qr} className="qr_icon" alt="QR코드" />
+        </div>
+        <div className="header"></div>
+      </header>
+      
+      {/* 배경 컨텐츠는 동적으로 가져온 가게 이름으로 표시 */}
+      <main>
+        <div className="store_info">
+          <div className="title">{isEditMode ? 'MENU EDIT' : 'MENU ADD'}</div>
+          <div className="store">
+            <h1>{restaurantName}</h1>
+          </div>
+        </div>
+        {/* ... (이하 생략) ... */}
+      </main>
+    </div>
   );
 };
 
-export default Menu_Edit_Popup2
+export default Menu_Edit_Popup2;
