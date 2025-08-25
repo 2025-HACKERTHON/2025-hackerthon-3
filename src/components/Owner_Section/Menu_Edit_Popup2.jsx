@@ -64,9 +64,10 @@ const Menu_Edit_Popup2 = () => {
     }
       
     const formData = new FormData();
-    formData.append('naemKo,', info.nameKo);
+    formData.append('nameKo', info.nameKo);
     formData.append('description', info.description);
     formData.append('price', info.price);
+
 
     if (imageFile) {
       formData.append('image', imageFile);
