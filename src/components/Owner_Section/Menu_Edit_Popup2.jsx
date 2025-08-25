@@ -6,7 +6,7 @@ import qr from '../../assets/img/owner_menu_edit/qr.svg';
 import edit from '../../assets/img/owner_menu_edit/edit.svg';
 
 const Menu_Edit_Popup2 = () => {
-  const userId = '1';
+  const userId = '17';
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();

@@ -5,6 +5,7 @@ import back from '../../assets/img/owner_menu_edit/back.svg';
 import qr from '../../assets/img/owner_menu_edit/qr.svg';
 import edit from '../../assets/img/owner_menu_edit/edit.svg';
 
+// 메뉴 섹션을 보여주는 자식 컴포넌트 (수정 없음)
 const MenuEditSection = ({ section, deleteSection }) => (
   <div className="menu_section" key={section.id}>
     <div className="text">
@@ -24,39 +25,44 @@ const MenuEditSection = ({ section, deleteSection }) => (
   </div>
 );
 
-const Menu_Edit = ({ }) => {
+// 메인 컴포넌트
+const Menu_Edit = () => {
   const [storeInfo, setStoreInfo] = useState(null);
   const [menuSections, setMenuSections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const userId = '17';
+  const userId = '17'; // 사용자 ID는 필요에 따라 동적으로 관리할 수 있습니다.
 
-  // 컴포넌트가 로드될 때 가게 정보와 메뉴 목록을 서버에서 가져옵니다.
+  // 1. 컴포넌트가 로드될 때 가게 정보와 메뉴 목록을 서버에서 가져옵니다.
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         const response = await axios.get(`https://www.taekyeong.shop/api/store/${userId}`);
         const data = response.data;
-        console.log(data)
-
-        setStoreInfo({
-          name: data.restaurantName,
-          address: data.restaurantAddress,
-          description: data.shortDescription,
-          detail: data.longDescription,
-          tags: data.tags || [],
-        });
         
-        localStorage.setItem('restaurantName', data.restaurantName || '');
+        console.log("서버로부터 받은 데이터:", data);
 
-        if (data && Array.isArray(data.menuList)) {
-          setMenuSections(data.menuList);
+        if (data) {
+          setStoreInfo({
+            name: data.restaurantName,
+            address: data.restaurantAddress,
+            description: data.shortDescription,
+            detail: data.longDescription,
+            tags: data.tags || [],
+          });
+          
+          localStorage.setItem('restaurantName', data.restaurantName || '');
+
+          if (Array.isArray(data.menuList)) {
+            setMenuSections(data.menuList);
+          }
         }
       } catch (err) {
         setError(err);
+        console.error("데이터 로딩 실패:", err);
       } finally {
         setLoading(false);
       }
@@ -64,25 +70,39 @@ const Menu_Edit = ({ }) => {
     fetchData();
   }, [userId]);
 
+
+  // 2. 메뉴 섹션을 삭제하는 함수
+  const deleteSection = async (menuId) => {
+    if (window.confirm('정말로 이 메뉴를 삭제하시겠습니까?')) {
+      try {
+        // API 명세에 따른 올바른 DELETE 요청 URL
+        await axios.delete(`https://www.taekyeong.shop/api/store/${userId}/settings/menu_info/${menuId}`);
+        
+        // 성공적으로 삭제되면 화면(state)에서도 해당 메뉴를 제거합니다.
+        setMenuSections(prevSections => prevSections.filter(section => section.id !== menuId));
+        alert('메뉴가 삭제되었습니다.');
+      } catch (err) {
+        console.error('메뉴 삭제 실패:', err);
+        alert('메뉴 삭제 중 오류가 발생했습니다.');
+      }
+    }
+  };
+
+
+  // 3. 가게 정보를 수정하고 저장하는 함수 (팝업 컴포넌트에서 호출될 것으로 예상)
   const handleStoreInfoSave = async (updatedInfo) => {
     const API_URL = `https://www.taekyeong.shop/api/store/${userId}/settings/store_info`;
-
-    // API 명세서에 맞게 payload 객체의 키 이름을 수정합니다.
     const payload = {
       restaurantName: updatedInfo.name,
       restaurantAddress: updatedInfo.address,
       shortDescription: updatedInfo.description,
       longDescription: updatedInfo.detail,
-      features: updatedInfo.tags, // 'tags'를 'features'로 변경
+      features: updatedInfo.tags,
     };
 
     try {
-      // 서버로 수정된 payload를 전송합니다.
       const response = await axios.patch(API_URL, payload);
-
       if (response.status === 200) {
-        // 성공 시 화면의 상태를 업데이트합니다.
-        // 서버가 수정한 값을 다시 보내준다면 response.data를 사용하는 것이 더 정확합니다.
         setStoreInfo(updatedInfo);
         localStorage.setItem('restaurantName', updatedInfo.name || '');
         alert('가게 정보가 성공적으로 저장되었습니다.');
@@ -93,25 +113,17 @@ const Menu_Edit = ({ }) => {
     }
   };
 
-  // (deleteSection, addMenuSection 등 다른 함수는 기존과 동일)
-   const deleteSection = async (id) => {
-    if (window.confirm('정말로 이 메뉴를 삭제하시겠습니까?')) {
-      try {
-        await axios.delete(`https://www.taekyeong.shop/api/store/${userId}/settings/menu_info/id/${id}`);
-        setMenuSections(prevSections => prevSections.filter(section => section.id !== id));
-        alert('메뉴가 삭제되었습니다.');
-      } catch (err) {
-        console.error('메뉴 삭제 실패:', err);
-        alert('메뉴 삭제 중 오류가 발생했습니다.');
-      }
-    }
+
+  // 4. 새로운 메뉴를 추가하기 위해 페이지를 이동하는 함수
+  const addMenuSection = () => {
+    // ':id'와 같은 파라미터가 아닌, 'new'와 같이 명확한 경로로 보내는 것이 일반적입니다.
+    navigate('/menu_edit_popup2/new');
+
   };
 
-  const addMenuSection = () => navigate('/menu_edit_popup2');
-
+  // 로딩 및 에러 상태에 따른 UI 처리
   if (loading) return <div>로딩 중...</div>;
   if (error) return <div>에러 발생: {error.message}</div>;
-
 
   return (
     <div id="Menu_Edit_Wrap" className="container">
