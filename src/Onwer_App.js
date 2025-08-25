@@ -22,7 +22,6 @@ import Menu_Edit_Popup1 from './components/Owner_Section/Menu_Edit_Popup1';
 import Menu_Edit_Popup2 from './components/Owner_Section/Menu_Edit_Popup2';
 
 const Owner_App = () => {
-  // (필요하면 사장 쪽 상태/함수들 여기에 배치)
   const [menuSections, setMenuSections] = useState([
     { id: 0, name: '', description: '', price: '', imagePreviewUrl: null },
   ]);
@@ -68,10 +67,8 @@ const Owner_App = () => {
   };
 
   return (
-    // 부모(index.js)에서 /owner/*로 들어오기 때문에
-    // 아래 자식 경로는 "앞에 슬래시(/) 없이" 작성해야 /owner/ 뒤에 붙는다.
     <Routes>
-      {/* 사장 홈 슬라이드들 */}
+      {/* 사장 홈 슬라이드들 (상대 경로) */}
       <Route path="owner_home_first" element={<Owner_home_first />} />
       <Route path="owner_home_second" element={<Owner_home_second />} />
       <Route path="owner_home_third" element={<Owner_home_third />} />
@@ -84,7 +81,7 @@ const Owner_App = () => {
       <Route path="menu_chinese" element={<Menu_Chinese />} />
       <Route path="owner_qr" element={<Owner_QR />} />
 
-      {/* 온보딩/로그인/회원가입/가게정보 (사장 섹션, 기존 경로 유지하되 /owner/ 밑으로) */}
+      {/* 온보딩/로그인/회원가입/가게정보 */}
       <Route path="Onboarding" element={<Onboarding />} />
       <Route path="Login" element={<Login />} />
       <Route path="Signup" element={<Signup />} />

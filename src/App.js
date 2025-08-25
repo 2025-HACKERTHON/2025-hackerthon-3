@@ -17,21 +17,21 @@ import Cus_order from './components/Customer_Section/Cus_order';
 const App = () => {
   return (
     <Routes>
-      {/* 손님 메인 */}
-      <Route path="/" element={<Menu />} />
+      {/* 루트(#/)는 index로 매핑 */}
+      <Route index element={<Menu />} />
 
-      {/* 손님 기타 화면들 */}
-      <Route path="/Menu1" element={<Menu1 />} />
-      <Route path="/Menu2" element={<Menu2 />} />
-      <Route path="/Menu3" element={<Menu3 />} />
-      <Route path="/Menu4" element={<Menu4 />} />
-      <Route path="/Menu5" element={<Menu5 />} />
-      <Route path="/qr" element={<QRScan />} />
-      <Route path="/menu_best" element={<Menu_Best />} />
-      <Route path="/menu_language" element={<Menu_Language />} />
-      <Route path="/menu_table" element={<Menu_Table />} />
-      <Route path="/cus_order" element={<Cus_order />} />
-      <Route path="/cus_options" element={<Cus_options />} />
+      {/* 나머지는 모두 상대 경로 */}
+      <Route path="Menu1" element={<Menu1 />} />
+      <Route path="Menu2" element={<Menu2 />} />
+      <Route path="Menu3" element={<Menu3 />} />
+      <Route path="Menu4" element={<Menu4 />} />
+      <Route path="Menu5" element={<Menu5 />} />
+      <Route path="qr" element={<QRScan />} />
+      <Route path="menu_best" element={<Menu_Best />} />
+      <Route path="menu_language" element={<Menu_Language />} />
+      <Route path="menu_table" element={<Menu_Table />} />
+      <Route path="cus_order" element={<Cus_order />} />
+      <Route path="cus_options" element={<Cus_options />} />
     </Routes>
   );
 };

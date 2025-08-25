@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import App from './App';               // 손님용
 import Owner_App from './Onwer_App';   // 사장용 (파일명 오타 유지)
 import './assets/sass/style.scss';
@@ -89,10 +89,12 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <HashRouter>
     <Routes>
-      {/* 손님 화면: 기본 루트 */}
-      <Route path="/*" element={<App />} />
-      {/* 사장 화면: /owner/ 하위 네임스페이스 */}
+      {/* 사장 화면: /owner/* 네임스페이스 고정 */}
       <Route path="/owner/*" element={<Owner_App />} />
+      {/* 손님 화면: 기본 루트 트리 */}
+      <Route path="/*" element={<App />} />
+      {/* 알 수 없는 경로는 루트로 */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   </HashRouter>
 );
