@@ -32,7 +32,7 @@ const Menu = () => {
             try {
                 setLoading(true);
 
-                const response = await fetch(`/api/store/${userId}/all`);
+                const response = await fetch(`http://3.38.135.47:8080/api/store/${userId}/all`);
                 if (!response.ok) {
                     throw new Error('API 호출에 실패했습니다.');
                 }
