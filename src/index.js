@@ -19,13 +19,13 @@ import './assets/sass/section/Owner_QR.scss'
     const cards = document.querySelectorAll('.menu_card');
     const items = [];
     cards.forEach((card, idx) => {
-      const nameEl  = card.querySelector('.text h1');
+      const nameEl = card.querySelector('.text h1');
       if (!nameEl) return;
-      const nameKo  = (nameEl.textContent || '').trim();
+      const nameKo = (nameEl.textContent || '').trim();
 
-      const descEl  = card.querySelector('.text p');
+      const descEl = card.querySelector('.text p');
       const priceEl = card.querySelector('.text .price');
-      const cntEl   = card.querySelector('.order_count .count');
+      const cntEl = card.querySelector('.order_count .count');
 
       const quantity = cntEl ? parseInt(cntEl.textContent.trim(), 10) || 0 : 0;
       if (quantity <= 0) return;
@@ -58,7 +58,7 @@ import './assets/sass/section/Owner_QR.scss'
     if (
       t.closest('.count_plus') ||
       t.closest('.count_minus') ||
-      t.closest('.order_btn')  ||   // "담기/주문" 버튼
+      t.closest('.order_btn') ||   // "담기/주문" 버튼
       t.closest('.cart_icon')       // 장바구니 아이콘 이동 직전 저장
     ) {
       // DOM의 수량 텍스트가 반영된 뒤 저장되도록
@@ -92,8 +92,8 @@ import './assets/sass/section/Owner_QR.scss'
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
-    <Owner_App/>
+    {/* <App /> */}
+    <Owner_App />
   </React.StrictMode>
 );
 
