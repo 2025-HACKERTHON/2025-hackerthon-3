@@ -17,7 +17,7 @@ public class MenuWithRestaurantInfoDTO {
     private String restaurantAddress;
     private String shortDescription;
     private String longDescription;
-    private List<MenuInfo> menus;
+    private List<MenuResponse> menus;
 
     @ElementCollection
     private List<String> features;

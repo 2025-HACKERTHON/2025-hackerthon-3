@@ -38,6 +38,14 @@ public class Menu {
     @Column(length = 10)
     private String language;
 
+    public String getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(String language) {
+        this.language = language;
+    }
+
     @Column(length = 500)
     private String imageUrl;          // S3에 업로드된 이미지의 접근 가능한 URL
 
@@ -64,11 +72,12 @@ public class Menu {
     // 기본 생성자
     public Menu() {}
 
-    public Menu(String nameKo, BigDecimal price, String description, SiteUser user) {
-        this.nameKo = nameKo;
-        this.price = price;
+    // 언어별 메뉴 조회용 생성자 (ID, 이름, 설명, 가격만 사용)
+    public Menu(Long id, String name, String description, BigDecimal price) {
+        this.id = id;
+        this.nameKo = name;        // ko 기본으로 저장
         this.description = description;
-        this.user = user;
+        this.price = price;
     }
 
     @OneToMany(mappedBy = "menu")
@@ -86,4 +95,33 @@ public class Menu {
     public Long getUserId() {
         return this.user != null ? this.user.getId() : null;
     }
+
+    //언어
+    @Column(name = "name_en", length = 100)
+    private String nameEn;
+
+    @Column(name = "name_ja", length = 100)
+    private String nameJa;
+
+    @Column(name = "name_ch", length = 100)
+    private String nameCh;
+
+    @Column(length = 500)
+    private String descriptionEn;
+
+    @Column(length = 500)
+    private String descriptionJa;
+
+    @Column(length = 500)
+    private String descriptionCh;
+
+    // 각 언어 getter 추가
+    public String getNameEn() { return this.nameEn; }
+    public String getNameJa() { return this.nameJa; }
+    public String getNameCh() { return this.nameCh; }
+
+    public String getDescriptionEn() { return this.descriptionEn; }
+    public String getDescriptionJa() { return this.descriptionJa; }
+    public String getDescriptionCh() { return this.descriptionCh; }
+
 }

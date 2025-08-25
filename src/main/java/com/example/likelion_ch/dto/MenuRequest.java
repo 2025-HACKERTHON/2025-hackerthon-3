@@ -29,4 +29,7 @@ public class MenuRequest {
     @NotNull(message = "가격을 입력해주세요")
     @Positive(message = "가격은 0보다 커야 합니다")
     private BigDecimal menuPrice;
+
+    @Builder.Default
+    private String language="ko";
 }

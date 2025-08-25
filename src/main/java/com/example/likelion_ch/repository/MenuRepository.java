@@ -15,6 +15,7 @@ import java.util.Optional;
 public interface MenuRepository extends JpaRepository<Menu, Long> {
 
     List<Menu> findByUser(SiteUser user);
+    List<Menu> findByUserId(Long userId);
 
     Optional<Menu> findByIdAndUserId(Long menuId, Long userId);
 
@@ -43,4 +44,13 @@ public interface MenuRepository extends JpaRepository<Menu, Long> {
     // 특정 사용자의 모든 메뉴 조회 (언어별로 그룹화)
     @Query("SELECT m FROM Menu m WHERE m.user.id = :userId ORDER BY m.userMenuId, m.language")
     List<Menu> findByUserIdOrderByUserMenuIdAndLanguage(@Param("userId") Long userId);
+
+    List<Menu> findByUser_IdAndLanguage(Long userId, String langCode);
+
+    List<Menu> findByUser_IdOrderByUserMenuIdAsc(Long userId);
+
+    List<Menu> findByIdIn(List<Long> topMenuIds);
+
+    Optional<Menu> findByUserMenuIdAndLanguage(Integer userMenuId, String language);
+
 }

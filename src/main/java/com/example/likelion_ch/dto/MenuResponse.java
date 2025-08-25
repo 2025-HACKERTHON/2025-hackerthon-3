@@ -17,13 +17,20 @@ public class MenuResponse {
     private Long id;
     private Integer userMenuId;
     private String nameKo;
+    private String nameEn;
+    private String nameJa;
+    private String nameCh;
     private String description;
+    private String descriptionEn;
+    private String descriptionJa;
+    private String descriptionCh;
     private BigDecimal price;
-    private String imageUrl;  // S3에 업로드된 이미지의 접근 가능한 URL
+    private String imageUrl;
     private Long version;
     private Instant createdAt;
     private Instant updatedAt;
     private Long userId;
+    private String language;
 
     private RestaurantInfo restaurantInfo;
     private List<MenuInfo> menuList;
