@@ -13,9 +13,15 @@ const Menu1 = () => {
     const location = useLocation();
     const { menu } = location.state || {};
 
-    const [count, setCount] = useState(1);
+    const [counts, setCounts] = useState({});
     const [selected1, setSelected1] = useState(false);
     const [selected2, setSelected2] = useState(false);
+    const handlePlus = (menuId) => {
+        setCounts(prev => ({ ...prev, [menuId]: (prev[menuId] || 0) + 1 }));
+    };
+    const handleMinus = (menuId) => {
+        setCounts(prev => ({ ...prev, [menuId]: Math.max(0, (prev[menuId] || 0) - 1) }));
+    };
 
     if (!menu) {
         return <div>메뉴 정보를 불러올 수 없습니다.</div>;
@@ -67,12 +73,12 @@ const Menu1 = () => {
                             <div className="quantity_count">
                                 <span>개수</span>
                                 <div>
-                                    <button onClick={() => count > 1 && setCount(count - 1)}>-</button>
-                                    <span>{count}</span>
-                                    <button onClick={() => setCount(count + 1)}>+</button>
+                                    <button className="count_minus" onClick={(e) => { e.preventDefault(); handleMinus(menu.id); }}>-</button>
+                                    <div className="count">{counts[menu.id] || 0}</div>
+                                    <button className="count_plus" onClick={(e) => { e.preventDefault(); handlePlus(menu.id); }}>+</button>
                                 </div>
                             </div>
-                            <div className="order_list">
+                            <div className="order_list" onClick={(e) => e.preventDefault()}>
                                 <button><img src={Order_list} alt="" /></button>
                             </div>
                         </div>
