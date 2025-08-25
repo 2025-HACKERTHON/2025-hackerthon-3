@@ -96,11 +96,18 @@ public class MenuController {
     @PostMapping(value = "/{userId}/settings/menu_info", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<MenuResponse> createMenu(
             @PathVariable Long userId,
-            @ModelAttribute MenuRequest menuRequest,
+            @RequestParam("nameKo") String nameKo,
+            @RequestParam("description") String description,
+            @RequestParam("price") BigDecimal price,
             @RequestPart(value = "image", required = false) MultipartFile image) {
 
-        // 기본 언어 ko
-        if (menuRequest.getLanguage() == null) menuRequest.setLanguage("ko");
+        // MenuRequest 생성
+        MenuRequest menuRequest = MenuRequest.builder()
+                .menuName(nameKo)          // nameKo를 menuName에 매핑
+                .menuDescription(description)
+                .menuPrice(price)
+                .language("ko")
+                .build();
 
         MenuResponse menu = menuService.createMenuWithImage(userId, menuRequest, image);
         return ResponseEntity.ok(menu);
