@@ -150,7 +150,7 @@ const Owner_home_fifth = () => {
       localStorage.setItem('owner_live_orders', JSON.stringify(filtered));
       // 다른 탭 반영
       window.dispatchEvent(new StorageEvent('storage', { key: 'owner_hidden_sigs' }));
-    } catch {}
+    } catch { }
   };
 
   // 서버 → 화면 모델
@@ -385,38 +385,38 @@ const Owner_home_fifth = () => {
   };
 
   // 상단 import/변수들 아래에 추가
-const [storeName, setStoreName] = useState('가게명');
-const userId = 1; // Menu_Edit에서 쓰는 것과 동일하게 맞추세요
+  const [storeName, setStoreName] = useState('가게명');
+  const userId = 1; // Menu_Edit에서 쓰는 것과 동일하게 맞추세요
 
-useEffect(() => {
-  // 1) 로컬 우선 반영 (화면 전환 즉시 보여주기)
-  const saved = localStorage.getItem('restaurantName');
-  if (saved) setStoreName(saved);
+  useEffect(() => {
+    // 1) 로컬 우선 반영 (화면 전환 즉시 보여주기)
+    const saved = localStorage.getItem('restaurantName');
+    if (saved) setStoreName(saved);
 
-  // 2) 서버 값으로 최종 동기화 (정확한 값 보장)
-  axios.get(`/api/store/${userId}`)
-    .then(res => {
-      const nm = res?.data?.restaurantName;
-      if (nm) {
-        setStoreName(nm);
-        // 혹시 로컬에도 최신 반영
-        localStorage.setItem('restaurantName', nm);
-      }
-    })
-    .catch(() => {/* 실패 시 로컬 값 유지 */});
-}, []);
+    // 2) 서버 값으로 최종 동기화 (정확한 값 보장)
+    axios.get(`/api/store/${userId}`)
+      .then(res => {
+        const nm = res?.data?.restaurantName;
+        if (nm) {
+          setStoreName(nm);
+          // 혹시 로컬에도 최신 반영
+          localStorage.setItem('restaurantName', nm);
+        }
+      })
+      .catch(() => {/* 실패 시 로컬 값 유지 */ });
+  }, []);
 
 
   return (
     <div id='ownerhomefifth_wrap' className='container'>
       <div className="header">
-              <button
-                className="qr"
-                onClick={() => navigate('/menu_edit')}
-              >
-                <img src={qr_btn} alt="QR 버튼" />
-              </button>
-            </div>
+        <button
+          className="qr"
+          onClick={() => navigate('/menu_edit')}
+        >
+          <img src={qr_btn} alt="QR 버튼" />
+        </button>
+      </div>
 
       <div className="text">
         <h1>RESTAURANT</h1>
@@ -426,7 +426,7 @@ useEffect(() => {
 
       <h1 className='title'> 실시간 주문 현황</h1>
       <div className="table_list">
-        
+
 
         {tables.map((t, idx) => (
           <div
@@ -462,12 +462,13 @@ useEffect(() => {
               <div className="orders_area" aria-live="polite">
                 {t.cards.map((c, i) => (
                   <div className="order_card" key={i}>
-                    <strong className="title">{c.title}</strong>
+                    <strong className="card_title">{c.title}</strong>
                     <p className="desc">{c.desc}</p>
                   </div>
                 ))}
               </div>
             )}
+
           </div>
         ))}
       </div>
