@@ -22,7 +22,6 @@ const Menu_Japanese = () => {
     const userId = 2; // 👉 실제 로그인한 userId로 바꿔주세요
     fetch(`https://www.taekyeong.shop/api/store/${userId}/settings/menu_info/lang/ja`)
 
-
       .then(res => res.json())
       .then(data => {
         setRestaurantInfo(data.restaurantInfo);

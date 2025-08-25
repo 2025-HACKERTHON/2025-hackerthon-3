@@ -82,10 +82,10 @@ const Menu_Edit_Popup2 = () => {
         await axios.post(API_URL, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
         alert('메뉴가 성공적으로 추가되었습니다.');
       }
-      
-      // 저장이 성공하면 Menu_Edit 페이지로 돌아갑니다.
-      // 이 페이지 이동으로 인해 Menu_Edit의 useEffect가 다시 실행되어 최신 목록을 불러옵니다.
-      navigate('/owner/menu_edit');
+
+      // 저장 성공 후, 메인 메뉴 편집 페이지로 돌아갑니다.
+      // 이 페이지는 돌아가면 useEffect를 통해 자동으로 최신 목록을 불러옵니다.
+      navigate('/menu_edit');
 
     } catch (error) {
       console.error('메뉴 저장/수정 실패:', error);
