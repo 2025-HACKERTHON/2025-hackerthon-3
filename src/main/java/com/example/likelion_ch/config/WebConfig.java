@@ -12,7 +12,7 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addMapping("/**") // 모든 API 경로에 대해
                 .allowedOrigins(
                         "http://localhost:3000", // 로컬 개발 환경 주소
-                        "https://www.taekyeong.shop/" // netlify 배포 링크
+                        "https://sunny-pavlova-dec770.netlify.app/" // netlify 배포 링크
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // 허용할 HTTP 메소드
                 .allowedHeaders("*") // 모든 헤더 허용
