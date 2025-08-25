@@ -1,6 +1,6 @@
 // src/components/Owner_Section/Owner_home_first.jsx
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import qr_btn from '../../assets/img/cus_order/qr_btn.svg';
 
@@ -444,12 +444,9 @@ const Owner_home_first = () => {
   return (
     <div id='ownerhomef_wrap' className='container'>
       <div className="header">
-        <button
-          className="qr"
-          onClick={() => navigate('/owner/menu_edit')}
-        >
+        <Link className='qr' to='/owner/menu_edit'>
           <img src={qr_btn} alt="QR 버튼" />
-        </button>
+        </Link>
       </div>
 
       <div className="text">

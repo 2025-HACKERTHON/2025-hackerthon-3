@@ -13,7 +13,7 @@ const MenuEditSection = ({ section, deleteSection }) => (
       <p>{section.description || '메뉴 설명을 해주세요. 자세하게 적을수록 손님들이 좋아해요.'}</p>
     </div>
     <div className="btn">
-      <Link to={`/menu_edit_popup2/${section.id}`} state={{ sectionData: section }}>
+      <Link to={`/owner/menu_edit_popup2/${section.id}`} state={{ sectionData: section }}>
         <div className="edit">
           <button className="edit_btn">편집</button>
         </div>
@@ -129,7 +129,7 @@ const Menu_Edit = () => {
     <div id="Menu_Edit_Wrap" className="container">
       <header>
         <div className="icon">
-          <Link to='/owner_home_first'>
+          <Link to='/owner/owner_home_first'>
             <img src={back} className="back_icon" alt="뒤로가기" />
           </Link>
           <img src={qr} className="qr_icon" alt="QR 코드" />
@@ -142,7 +142,7 @@ const Menu_Edit = () => {
             <div className="title">MENU EDIT</div>
             <div className="store">
               <h1>{storeInfo.name}</h1>
-              <Link to='/menu_edit_popup1' state={{ initialInfo: storeInfo }}>
+              <Link to='/owner/menu_edit_popup1' state={{ initialInfo: storeInfo }}>
                 <div className="edit_icon">
                   <img src={edit} alt="편집" />
                 </div>
