@@ -13,7 +13,7 @@ const MenuEditSection = ({ section, deleteSection }) => (
       <p>{section.description || '메뉴 설명을 해주세요. 자세하게 적을수록 손님들이 좋아해요.'}</p>
     </div>
     <div className="btn">
-      <Link to={`/menu_edit_popup2/${section.id}`} state={{ sectionData: section }}>
+      <Link to={`/menu_edit_popup2/${section.userMenuId}`} state={{ sectionData: section }}>
         <div className="edit">
           <button className="edit_btn">편집</button>
         </div>
