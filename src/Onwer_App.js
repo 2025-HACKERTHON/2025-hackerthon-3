@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { HashRouter, Route, Routes } from 'react-router-dom';
 import Menu_Edit from './components/Owner_Section/Menu_Edit';
 import Menu_Edit_Popup1 from './components/Owner_Section/Menu_Edit_Popup1';
 import Menu_Edit_Popup2 from './components/Owner_Section/Menu_Edit_Popup2';
@@ -69,7 +69,7 @@ const deleteMenuSection = (id) => {
   };
 
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route path='/owner_home_first' element={<Owner_home_first />} />
         <Route path='/owner_home_second' element={<Owner_home_second />} />
@@ -111,7 +111,7 @@ const deleteMenuSection = (id) => {
             }
           />
         </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 };
 

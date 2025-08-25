@@ -271,7 +271,7 @@ const Owner_home_first = () => {
         headers['If-None-Match'] = etagRef.current;
       }
 
-      const res = await axios.get('https://3.38.135.47:8080/api/orders/current', {
+      const res = await axios.get('https://www.taekyeong.shop/api/orders/current', {
         params: { userId: 1 },
         withCredentials: true,
         headers,
@@ -331,7 +331,7 @@ const Owner_home_first = () => {
     lastLangAtRef.current = now;
 
     try {
-      const res = await axios.get('https://3.38.135.47:8080/api/statistics/languages', {
+      const res = await axios.get('https://www.taekyeong.shop/api/statistics/languages', {
         params: { userId: 1 },
         withCredentials: true,
       });
@@ -419,9 +419,9 @@ useEffect(() => {
   // 1) 로컬 우선 반영 (화면 전환 즉시 보여주기)
   const saved = localStorage.getItem('restaurantName');
   if (saved) setStoreName(saved);
-
+https://www.taekyeong.shop
   // 2) 서버 값으로 최종 동기화 (정확한 값 보장)
-  axios.get(`https://3.38.135.47:8080/api/store/${userId}`)
+  axios.get(`https://www.taekyeong.shop/api/store/${userId}`)
     .then(res => {
       const nm = res?.data?.restaurantName;
       if (nm) {
