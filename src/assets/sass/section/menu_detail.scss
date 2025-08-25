@@ -17,9 +17,6 @@
 
         }
         
-
-
-
         .nav{
             height: 78px;
             background-color: #B3E8FF;
@@ -202,12 +199,12 @@
         
         .shop{
             position: absolute;
-            left: 440px;
+            margin-left: 230px;
         }
 
         .shopping{
             position: absolute;
-            left: 500px;
+            margin-left: 300px;
             margin-top: -7px;
         }
 
@@ -397,14 +394,14 @@
         }
         
         .shop{
-            position: relative;
-            left: 230px;
+            position: absolute;
+            margin-left: 100px;
+
         }
 
         .shopping{
-            position: relative;
-            left: 300px;
-            top: -72px;
+            position: absolute;
+            
         }
 
     }
