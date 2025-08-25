@@ -10,7 +10,7 @@ const Owner_home_second = () => {
   const navigate = useNavigate();
 
   const PAGE_SLUGS = ['first', 'second', 'third', 'fourth', 'fifth'];
-  const pathFor = (n) => `/owner_home_${PAGE_SLUGS[(n - 1) % TOTAL_PAGES]}`;
+  const pathFor = (n) => `owner_home_${PAGE_SLUGS[(n - 1) % TOTAL_PAGES]}`;
 
   const goNext = () => navigate(pathFor((current % TOTAL_PAGES) + 1));
   const goPrev = () => navigate(pathFor(((current - 2 + TOTAL_PAGES) % TOTAL_PAGES) + 1));
@@ -376,7 +376,7 @@ useEffect(() => {
       <div className="header">
               <button
                 className="qr"
-                onClick={() => navigate('/menu_edit')}
+                onClick={() => navigate('menu_edit')}
               >
                 <img src={qr_btn} alt="QR 버튼" />
               </button>
