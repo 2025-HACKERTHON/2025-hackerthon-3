@@ -88,6 +88,7 @@ const Menu_Edit = () => {
     if (translationLang) {
       const fetchTranslatedData = async () => {
         try {
+          // GET 요청을 사용하여 번역된 데이터 가져오기
           const response = await axiosInstance.get(`/store/${userId}/settings/menu_info/lang/${translationLang}`);
           const translatedData = response.data;
 
