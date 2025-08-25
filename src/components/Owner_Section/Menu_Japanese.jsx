@@ -133,7 +133,7 @@ const Menu_Japanese = () => {
           {restaurantInfo.features && restaurantInfo.features.length > 0 ? (
             restaurantInfo.features.map((feature, idx) => (
               <div key={idx} className={`detail${idx + 1}`}>
-                <p>{typeof feature === "string" ? feature : feature.feature}</p>
+                <p>{typeof feature === "string" ? feature : feature.name}</p>
               </div>
             ))
           ) : (
@@ -149,7 +149,7 @@ const Menu_Japanese = () => {
           <div className="menu_box">
             {menuList.length > 0 ? (
               menuList.map((menu) => (
-                <div key={menu.menuId} className="menu_item">
+                <div key={menu.id} className="menu_item">
                   <button>
                     <img src={Edit} alt="편집" />
                   </button>
@@ -159,7 +159,7 @@ const Menu_Japanese = () => {
                 </div>
               ))
             ) : (
-              <p>등록된 메뉴가 없습니다.</p>
+              <p>登録されたメニューがありません。</p>
             )}
           </div>
           <div className="bottom">

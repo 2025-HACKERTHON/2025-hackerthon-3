@@ -76,6 +76,7 @@ const Menu_Edit = () => {
         }
       } catch (err) {
         setError(err);
+        console.error("데이터 로딩 실패:", err);
       } finally {
         setLoading(false);
       }
@@ -106,7 +107,7 @@ const Menu_Edit = () => {
       };
       fetchTranslatedData();
     }
-  }, [translationLang, userId, navigate]);
+  }, [translationLang, userId, navigate, axiosInstance]);
 
   const handleStoreInfoSave = async (updatedInfo) => {
     const API_URL = `/store/${userId}/settings/store_info`;
