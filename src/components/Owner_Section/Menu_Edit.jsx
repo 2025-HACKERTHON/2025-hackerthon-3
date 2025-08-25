@@ -63,6 +63,22 @@ const Menu_Edit = ({ }) => {
     fetchData();
   }, [userId]);
 
+ const deleteSection = async (menuId) => {
+    if (window.confirm('정말로 이 메뉴를 삭제하시겠습니까?')) {
+      try {
+        // API 명세에 따른 올바른 DELETE 요청 URL
+        await axios.delete(`/api/store/${userId}/settings/menu_info/${menuId}`);
+        
+        // 성공적으로 삭제되면 화면(state)에서도 해당 메뉴를 제거합니다.
+        setMenuSections(prevSections => prevSections.filter(section => section.id !== menuId));
+        alert('메뉴가 삭제되었습니다.');
+      } catch (err) {
+        console.error('메뉴 삭제 실패:', err);
+        alert('메뉴 삭제 중 오류가 발생했습니다.');
+      }
+    }
+  };
+
   const handleStoreInfoSave = async (updatedInfo) => {
     const API_URL = `/api/store/${userId}/settings/store_info`;
 
@@ -92,25 +108,15 @@ const Menu_Edit = ({ }) => {
     }
   };
 
-  // (deleteSection, addMenuSection 등 다른 함수는 기존과 동일)
-   const deleteSection = async (id) => {
-    if (window.confirm('정말로 이 메뉴를 삭제하시겠습니까?')) {
-      try {
-        await axios.delete(`/api/store/${userId}/settings/menu_info/id/${id}`);
-        setMenuSections(prevSections => prevSections.filter(section => section.id !== id));
-        alert('메뉴가 삭제되었습니다.');
-      } catch (err) {
-        console.error('메뉴 삭제 실패:', err);
-        alert('메뉴 삭제 중 오류가 발생했습니다.');
-      }
-    }
+
+
+  const addMenuSection = () => {
+    navigate('/menu_edit_popup2/:id');
   };
 
-  const addMenuSection = () => navigate('/menu_edit_popup2');
 
   if (loading) return <div>로딩 중...</div>;
   if (error) return <div>에러 발생: {error.message}</div>;
-
 
   return (
     <div id="Menu_Edit_Wrap" className="container">
