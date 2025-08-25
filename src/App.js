@@ -43,9 +43,9 @@ const App = () => {
       <Route path='/cus_order' element={<Cus_order />} />
       <Route path='/cus_options' element={<Cus_options />} />
       <Route path='/owner_home_first' element={<Owner_home_first />} />
-      <Route path='/menu_english' element={<Menu_English />} />
-      <Route path='/menu_japanese' element={<Menu_Japanese />} />
-      <Route path='/menu_chinese' element={<Menu_Chinese />} />
+      <Route path='/menu_en' element={<Menu_English />} />
+      <Route path='/menu_ja' element={<Menu_Japanese />} />
+      <Route path='/menu_ch' element={<Menu_Chinese />} />
       <Route path='/owner_qr' element={<Owner_QR />} />
     </Routes>
     </BrowserRouter>

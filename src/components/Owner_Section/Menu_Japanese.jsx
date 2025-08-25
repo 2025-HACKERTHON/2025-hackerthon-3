@@ -15,17 +15,34 @@ const Menu_Japanese = () => {
   // 🔹 API 데이터 상태
   const [restaurantInfo, setRestaurantInfo] = useState(null);
   const [menuList, setMenuList] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // ✅ API 호출
   useEffect(() => {
-    const userId = 17; // 👉 실제 로그인한 userId로 바꿔주세요
-    fetch(`http://3.38.135.47:8080/api/store/${userId}/settings/menu_info/lang/ja`)
-      .then(res => res.json())
-      .then(data => {
-        setRestaurantInfo(data.restaurantInfo);
-        setMenuList(data.menuList);
-      })
-      .catch(err => console.error("API 호출 실패:", err));
+    const fetchData = async () => {
+      try {
+        const userId = 2; // 👉 실제 로그인한 userId로 교체 필요
+        const response = await fetch(
+          `https://www.taekyeong.shop/api/store/${userId}/settings/menu_info/lang/ja`
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("📌 API 응답:", data);
+
+        setRestaurantInfo(data.restaurantInfo || {});
+        setMenuList(data.menuList || []);
+      } catch (err) {
+        console.error("❌ API 호출 실패:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
 
   const getSelectedLang = () => {
@@ -36,14 +53,18 @@ const Menu_Japanese = () => {
   };
 
   const handleLanguageSelect = (lang) => {
-    if (lang === "영어") navigate("/menu_english");
-    if (lang === "중국어") navigate("/menu_chinese");
-    if (lang === "일본어") navigate("/menu_japanese");
+    if (lang === "영어") navigate("/menu_en");
+    if (lang === "중국어") navigate("/menu_ch");
+    if (lang === "일본어") navigate("/menu_ja");
     setShowLanguageMenu(false);
   };
 
-  if (!restaurantInfo) {
+  if (loading) {
     return <div>Loading...</div>;
+  }
+
+  if (!restaurantInfo) {
+    return <div>식당 정보를 불러올 수 없습니다.</div>;
   }
 
   return (
@@ -65,7 +86,7 @@ const Menu_Japanese = () => {
 
         {/* 언어 선택 */}
         <div className="language_bar">
-          <p>{getSelectedLang()}메뉴</p>
+          <p>{getSelectedLang()} 메뉴</p>
           <div className="language_choice">
             <button onClick={() => setShowLanguageMenu(!showLanguageMenu)}>
               {showLanguageMenu ? (
@@ -78,17 +99,20 @@ const Menu_Japanese = () => {
               <div className="language_dropdown">
                 <p
                   onClick={() => handleLanguageSelect("영어")}
-                  className={getSelectedLang() === "영어" ? "active" : ""}>
+                  className={getSelectedLang() === "영어" ? "active" : ""}
+                >
                   영어
                 </p>
                 <p
                   onClick={() => handleLanguageSelect("중국어")}
-                  className={getSelectedLang() === "중국어" ? "active" : ""}>
+                  className={getSelectedLang() === "중국어" ? "active" : ""}
+                >
                   중국어
                 </p>
                 <p
                   onClick={() => handleLanguageSelect("일본어")}
-                  className={getSelectedLang() === "일본어" ? "active" : ""}>
+                  className={getSelectedLang() === "일본어" ? "active" : ""}
+                >
                   일본어
                 </p>
               </div>
@@ -98,10 +122,10 @@ const Menu_Japanese = () => {
 
         {/* 식당 정보 */}
         <div className="menu_name">
-          <h1>{restaurantInfo.restaurantName}</h1>
-          <h2>{restaurantInfo.shortDescription}</h2>
-          <p>{restaurantInfo.longDescription}</p>
-          <p>{restaurantInfo.restaurantAddress}</p>
+          <h1>{restaurantInfo.restaurantName || "이름 없음"}</h1>
+          <h2>{restaurantInfo.shortDescription || ""}</h2>
+          <p>{restaurantInfo.longDescription || ""}</p>
+          <p>{restaurantInfo.restaurantAddress || ""}</p>
         </div>
 
         {/* 특징 */}
@@ -109,7 +133,7 @@ const Menu_Japanese = () => {
           {restaurantInfo.features && restaurantInfo.features.length > 0 ? (
             restaurantInfo.features.map((feature, idx) => (
               <div key={idx} className={`detail${idx + 1}`}>
-                <p>{feature}</p>
+                <p>{typeof feature === "string" ? feature : feature.feature}</p>
               </div>
             ))
           ) : (
@@ -123,14 +147,20 @@ const Menu_Japanese = () => {
             <p>메뉴 편집</p>
           </div>
           <div className="menu_box">
-            {menuList.map(menu => (
-              <div key={menu.menuId} className="menu_item">
-                <button><img src={Edit} alt="편집" /></button>
-                <h3>{menu.nameKo}</h3>
-                <h4>{menu.description}</h4>
-                <p>{menu.price.toLocaleString()}원</p>
-              </div>
-            ))}
+            {menuList.length > 0 ? (
+              menuList.map((menu) => (
+                <div key={menu.menuId} className="menu_item">
+                  <button>
+                    <img src={Edit} alt="편집" />
+                  </button>
+                  <h3>{menu.nameKo || "메뉴 이름 없음"}</h3>
+                  <h4>{menu.description || ""}</h4>
+                  <p>{Number(menu.price).toLocaleString()}원</p>
+                </div>
+              ))
+            ) : (
+              <p>등록된 메뉴가 없습니다.</p>
+            )}
           </div>
           <div className="bottom">
             <button onClick={() => navigate('/owner_qr')}>

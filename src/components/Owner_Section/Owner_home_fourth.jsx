@@ -251,7 +251,7 @@ const Owner_home_fourth = () => {
       const headers = {};
       if (ordersEtagRef.current) headers['If-None-Match'] = ordersEtagRef.current;
 
-      const res = await api.get('/api/orders/current', {
+      const res = await api.get('https://www.taekyeong.shop/api/orders/current', {
         headers,
         signal: controller.signal,
         validateStatus: (s) => (s >= 200 && s < 300) || s === 304,
@@ -288,7 +288,7 @@ const Owner_home_fourth = () => {
     lastTop3AtRef.current = now;
 
     try {
-      const res = await api.get('/api/statistics/menus/top3/1/ENG');
+      const res = await api.get('https://www.taekyeong.shop/api/statistics/menus/top3/1/ENG');
       const arr = Array.isArray(res?.data?.result) ? res.data.result : (Array.isArray(res?.data) ? res.data : []);
       setEngTop3(arr.map(s => String(s || '').trim()).filter(Boolean).slice(0, 3));
     } catch {
@@ -303,7 +303,7 @@ const Owner_home_fourth = () => {
     lastLangAtRef.current = now;
 
     try {
-      const res = await api.get('/api/statistics/languages', { params: { userId: 1 } });
+      const res = await api.get('https://www.taekyeong.shop/api/statistics/languages', { params: { userId: 1 } });
       const arr = Array.isArray(res?.data?.result) ? res.data.result : (Array.isArray(res?.data) ? res.data : []);
       setLangStats(arr);
     } catch {
@@ -386,7 +386,7 @@ useEffect(() => {
   if (saved) setStoreName(saved);
 
   // 2) 서버 값으로 최종 동기화 (정확한 값 보장)
-  axios.get(`/api/store/${userId}`)
+  axios.get(`https://www.taekyeong.shop/api/store/${userId}`)
     .then(res => {
       const nm = res?.data?.restaurantName;
       if (nm) {

@@ -38,7 +38,7 @@ const Store_info = () => {
 
     try {
       const response = await axios.post(
-        `http://3.38.135.47:8080/api/user/register/step2/${userId}`,
+        `https://www.taekyeong.shop/api/user/register/step2/${userId}`,
         requestData,
         {
           headers: { 'Content-Type': 'application/json' },

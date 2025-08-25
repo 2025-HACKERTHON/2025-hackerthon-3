@@ -6,7 +6,7 @@ import qr from '../../assets/img/owner_menu_edit/qr.svg';
 import edit from '../../assets/img/owner_menu_edit/edit.svg';
 
 const Menu_Edit_Popup2 = () => {
-  const userId = '1';
+  const userId = '17';
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();
@@ -55,11 +55,11 @@ const Menu_Edit_Popup2 = () => {
 
     try {
       if (sectionId) { // ID가 있으면 '수정' (PUT 요청)
-        const API_URL = `/api/store/${userId}/settings/menu_info/id/${sectionId}`;
+        const API_URL = `https://www.taekyeong.shop/api/store/${userId}/settings/menu_info/id/${sectionId}`;
         await axios.put(API_URL, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
         alert('메뉴가 성공적으로 수정되었습니다.');
       } else { // ID가 없으면 '추가' (POST 요청)
-        const API_URL = `/api/store/${userId}/settings/menu_info`;
+        const API_URL = `https://www.taekyeong.shop/api/store/${userId}/settings/menu_info`;
         await axios.post(API_URL, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
         alert('메뉴가 성공적으로 추가되었습니다.');
       }

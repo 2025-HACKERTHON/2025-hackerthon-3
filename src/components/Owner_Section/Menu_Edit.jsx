@@ -5,53 +5,70 @@ import back from '../../assets/img/owner_menu_edit/back.svg';
 import qr from '../../assets/img/owner_menu_edit/qr.svg';
 import edit from '../../assets/img/owner_menu_edit/edit.svg';
 
-const MenuEditSection = ({ section, deleteSection }) => (
-  <div className="menu_section" key={section.id}>
-    <div className="text">
-      <h1>{section.nameKo || '메뉴명을 적어주세요!'}</h1>
-      <p>{section.description || '메뉴 설명을 해주세요. 자세하게 적을수록 손님들이 좋아해요.'}</p>
-    </div>
-    <div className="btn">
-      <Link to={`/menu_edit_popup2/${section.id}`} state={{ sectionData: section }}>
+const MenuEditSection = ({ section, deleteSection }) => {
+  const navigate = useNavigate();
+
+  const handleEditClick = () => {
+    navigate(`/menu_edit_popup2/${section.id}`, { state: { sectionData: section } });
+  };
+
+  return (
+    <div className="menu_section" key={section.id}>
+      <div className="text">
+        <h1>{section.nameKo || '메뉴명을 적어주세요!'}</h1>
+        <p>{section.description || '메뉴 설명을 해주세요. 자세하게 적을수록 손님들이 좋아해요.'}</p>
+      </div>
+      <div className="btn">
         <div className="edit">
-          <button className="edit_btn">편집</button>
+          <button className="edit_btn" onClick={handleEditClick}>
+            편집
+          </button>
         </div>
-      </Link>
-      <div className="delete">
-        <button className="del_btn" onClick={() => deleteSection(section.id)} >삭제</button>
+        <div className="delete">
+          <button className="del_btn" onClick={() => deleteSection(section.id)}>
+            삭제
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const Menu_Edit = () => {
   const [storeInfo, setStoreInfo] = useState(null);
   const [menuSections, setMenuSections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [translationLang, setTranslationLang] = useState(null);
   const navigate = useNavigate();
 
-  // userId를 하드코딩하지 않고, 실제 로그인 정보에서 가져오는 것이 좋습니다.
-  // 예: const userId = localStorage.getItem('userId');
-  const userId = localStorage.getItem('userId');
+  const userId = '17';
+  const token = localStorage.getItem("token");
 
-  // 컴포넌트가 로드될 때 가게 정보와 메뉴 목록을 서버에서 가져옵니다.
+  const axiosInstance = axios.create({
+    baseURL: "https://www.taekyeong.shop/api",
+    headers: {
+      "Authorization": token ? `Bearer ${token}` : "",
+      "Content-Type": "application/json",
+    },
+  });
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`/api/store/${userId}`);
+        const response = await axiosInstance.get(`/store/${userId}`);
         const data = response.data;
-        console.log(data)
+        console.log(data);
 
         setStoreInfo({
           name: data.restaurantName,
           address: data.restaurantAddress,
           description: data.shortDescription,
           detail: data.longDescription,
-          tags: data.tags || [],
+          tags: data.features || [],
         });
-        
+
         localStorage.setItem('restaurantName', data.restaurantName || '');
 
         if (data && Array.isArray(data.menuList)) {
@@ -66,9 +83,33 @@ const Menu_Edit = () => {
     fetchData();
   }, [userId]);
 
-  const handleStoreInfoSave = async (updatedInfo) => {
-    const API_URL = `/api/store/${userId}/settings/store_info`;
+  useEffect(() => {
+    if (translationLang) {
+      const fetchTranslatedData = async () => {
+        try {
+          const response = await axiosInstance.get(`/store/${userId}/settings/menu_info/lang/${translationLang}`);
+          const translatedData = response.data;
 
+          if (translatedData) {
+            navigate(`/menu_${translationLang}`, {
+              state: {
+                restaurantInfo: translatedData.restaurantInfo,
+                menuList: translatedData.menuList,
+              },
+            });
+            alert('메뉴가 성공적으로 번역되었습니다.');
+          }
+        } catch (err) {
+          console.error('번역 실패:', err);
+          alert('번역 중 오류가 발생했습니다.');
+        }
+      };
+      fetchTranslatedData();
+    }
+  }, [translationLang, userId, navigate]);
+
+  const handleStoreInfoSave = async (updatedInfo) => {
+    const API_URL = `/store/${userId}/settings/store_info`;
     const payload = {
       restaurantName: updatedInfo.name,
       restaurantAddress: updatedInfo.address,
@@ -78,7 +119,7 @@ const Menu_Edit = () => {
     };
 
     try {
-      const response = await axios.patch(API_URL, payload);
+      const response = await axiosInstance.patch(API_URL, payload);
 
       if (response.status === 200) {
         setStoreInfo(updatedInfo);
@@ -94,7 +135,7 @@ const Menu_Edit = () => {
   const deleteSection = async (id) => {
     if (window.confirm('정말로 이 메뉴를 삭제하시겠습니까?')) {
       try {
-        await axios.delete(`/api/store/${userId}/settings/menu_info/id/${id}`);
+        await axiosInstance.delete(`/store/${userId}/settings/menu_info/id/${id}`);
         setMenuSections(prevSections => prevSections.filter(section => section.id !== id));
         alert('메뉴가 삭제되었습니다.');
       } catch (err) {
@@ -106,25 +147,9 @@ const Menu_Edit = () => {
 
   const addMenuSection = () => navigate('/menu_edit_popup2');
 
-  const handleTranslate = async () => {
-    try {
-      const API_URL = `/api/store/${userId}/settings/menu_info/lang/en`;
-      const payload = {
-        menuList: menuSections,
-      };
-  
-      const response = await axios.post(API_URL, payload);
-  
-      if (response.status === 200) {
-        setMenuSections(response.data.menuList);
-        alert('메뉴가 성공적으로 번역되었습니다.');
-      }
-    } catch (error) {
-      console.error('번역 실패:', error);
-      alert('번역 중 오류가 발생했습니다.');
-    }
+  const handleTranslateClick = (lang) => {
+    setTranslationLang(lang);
   };
-
 
   if (loading) return <div>로딩 중...</div>;
   if (error) return <div>에러 발생: {error.message}</div>;
@@ -156,7 +181,11 @@ const Menu_Edit = () => {
             <div className='text'>{storeInfo.detail}</div>
             <div className='map'>{storeInfo.address}</div>
             <div className="tags">
-              {storeInfo.tags.map(tag => <div key={tag} className="tag selected">{tag}</div>)}
+              {storeInfo.tags.map(tag => (
+                <div key={tag.featureId} className="tag selected">
+                  {tag.name}
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -166,7 +195,7 @@ const Menu_Edit = () => {
             <MenuEditSection key={section.id} section={section} deleteSection={deleteSection} />
           ))}
           <button className="menu_add" onClick={addMenuSection}>+</button>
-          <button className="tanslation_btn" onClick={handleTranslate}>번역하기</button>
+          <button className="tanslation_btn" onClick={() => handleTranslateClick('en')}>번역하기</button>
         </div>
       </main>
     </div>

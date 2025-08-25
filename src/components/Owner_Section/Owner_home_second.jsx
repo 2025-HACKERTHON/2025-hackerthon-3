@@ -235,7 +235,7 @@ const Owner_home_second = () => {
       const headers = {};
       if (ordersEtagRef.current) headers['If-None-Match'] = ordersEtagRef.current;
 
-      const res = await axios.get('/api/orders/current', {
+      const res = await axios.get('https://3.38.135.47:8080/api/orders/current', {
         withCredentials: true,
         headers,
         signal: controller.signal,
@@ -279,7 +279,7 @@ const Owner_home_second = () => {
     lastJapanAtRef.current = now;
 
     try {
-      const res = await axios.get('/api/statistics/menus/top3/1/JAN', { withCredentials: true });
+      const res = await axios.get('https://www.taekyeong.shop/api/statistics/menus/top3/1/JAN', { withCredentials: true });
       const arr = Array.isArray(res?.data) ? res.data : (Array.isArray(res?.data?.result) ? res.data.result : []);
       setBestMenus(arr.map((s) => String(s || '').trim()).filter(Boolean).slice(0, 3));
     } catch {
@@ -358,7 +358,7 @@ useEffect(() => {
   if (saved) setStoreName(saved);
 
   // 2) 서버 값으로 최종 동기화 (정확한 값 보장)
-  axios.get(`/api/store/${userId}`)
+  axios.get(`https://www.taekyeong.shop/api/store/${userId}`)
     .then(res => {
       const nm = res?.data?.restaurantName;
       if (nm) {

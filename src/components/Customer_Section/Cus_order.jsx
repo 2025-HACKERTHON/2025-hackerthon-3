@@ -102,7 +102,7 @@ const Cus_order = () => {
     (async () => {
       try {
         const userId = 1;
-        const res = await axios.get(`/api/store/${userId}/all`);
+        const res = await axios.get(`https://www.taekyeong.shop/api/store/${userId}/all`);
         const menusRaw = res?.data?.menus;
         const menus = Array.isArray(menusRaw) ? menusRaw : Object.values(menusRaw || {});
         const index = {};
@@ -239,7 +239,7 @@ const Cus_order = () => {
     if (Object.keys(menuIndex || {}).length > 0) return;
     try {
       const userId = 1;
-      const res = await axios.get(`/api/store/${userId}/all`);
+      const res = await axios.get(`https://www.taekyeong.shop/api/store/${userId}/all`);
       const menusRaw = res?.data?.menus;
       const menus = Array.isArray(menusRaw) ? menusRaw : Object.values(menusRaw || {});
       const index = {};
@@ -308,7 +308,7 @@ const Cus_order = () => {
     };
 
     try {
-      const res = await axios.post('/api/orders', body, {
+      const res = await axios.post('https://www.taekyeong.shop/api/orders', body, {
         params: { userId: Number(userId || 1) },
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         withCredentials: true,
@@ -334,7 +334,7 @@ const Cus_order = () => {
     }
 
     try {
-      await axios.post('/api/order-ratings', { orderId, star: rating });
+      await axios.post('https://www.taekyeong.shop/api/order-ratings', { orderId, star: rating });
       setIsRatingOpen(false);
       setIsThanksOpen(true);
     } catch {

@@ -27,7 +27,7 @@
       "react-app/jest"
     ]
   },
-  "proxy": "http://3.38.135.47:8080",
+  "proxy": "https://www.taekyeong.shop",
   "browserslist": {
     "production": [
       ">0.2%",
