@@ -9,7 +9,7 @@ import Vectorup from '../../assets/img/owner_menu_edit/Vector up .png';
 
 const Menu_Japanese = () => {
   const navigate = useNavigate();
-  const location = useLocation(); 
+  const location = useLocation();
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
 
   // 🔹 API 데이터 상태
@@ -18,7 +18,7 @@ const Menu_Japanese = () => {
 
   // ✅ API 호출
   useEffect(() => {
-    const userId = 2; // 👉 실제 로그인한 userId로 바꿔주세요
+    const userId = 17; // 👉 실제 로그인한 userId로 바꿔주세요
     fetch(`http://3.38.135.47:8080/api/store/${userId}/settings/menu_info/lang/ja`)
       .then(res => res.json())
       .then(data => {
@@ -108,7 +108,7 @@ const Menu_Japanese = () => {
         <div className="detail_box">
           {restaurantInfo.features && restaurantInfo.features.length > 0 ? (
             restaurantInfo.features.map((feature, idx) => (
-              <div key={idx} className={`detail${idx+1}`}>
+              <div key={idx} className={`detail${idx + 1}`}>
                 <p>{feature}</p>
               </div>
             ))

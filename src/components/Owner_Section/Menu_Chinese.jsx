@@ -11,7 +11,7 @@ const Menu_Chinese = () => {
   const navigate = useNavigate();
   const location = useLocation(); 
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
-
+  const storedUserId = localStorage.getItem('userId');
   // 🔹 API 상태
   const [restaurantInfo, setRestaurantInfo] = useState(null);
   const [menuList, setMenuList] = useState([]);
@@ -19,7 +19,7 @@ const Menu_Chinese = () => {
 
   // ✅ API 호출
   useEffect(() => {
-    const userId = 2; // 👉 실제 userId로 교체 필요
+    const userId = storedUserId; // 👉 실제 userId로 교체 필요
     fetch(`http://3.38.135.47:8080/api/store/${userId}/settings/menu_info/lang/ch`)
       .then(res => {
         if (!res.ok) throw new Error("API 응답 에러: " + res.status);

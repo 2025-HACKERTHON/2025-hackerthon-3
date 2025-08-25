@@ -31,7 +31,7 @@ const Menu_Edit = ({ }) => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const userId = '1';
+  const userId = '17';
 
   // 컴포넌트가 로드될 때 가게 정보와 메뉴 목록을 서버에서 가져옵니다.
   useEffect(() => {
@@ -40,6 +40,7 @@ const Menu_Edit = ({ }) => {
         setLoading(true);
         const response = await axios.get(`/api/store/${userId}`);
         const data = response.data;
+        console.log(data)
 
         setStoreInfo({
           name: data.restaurantName,

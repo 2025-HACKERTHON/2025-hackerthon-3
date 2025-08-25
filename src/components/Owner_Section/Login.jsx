@@ -21,6 +21,8 @@ const Login = () => {
       });
 
       console.log("로그인 성공:", response.data);
+      localStorage.setItem("userId", response.data.id)
+      
 
       // 로그인 성공 시 -> 다음 페이지로 이동
       navigate('/Storeinfo');
