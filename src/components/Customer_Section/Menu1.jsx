@@ -3,10 +3,10 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import Vector from '../../assets/img/Vector 5.png';
 import QR from '../../assets/img/bx_qr.png';
 import Language from '../../assets/img/flowbite_language-outline.png';
-import Order_list from '../../assets/img/Frame 8.png';
-import Shopping from '../../assets/img/Frame 258.png';
-import NumberSelector from './Menu_Table'
-import { Link } from 'react-router-dom'
+// import Order_list from '../../assets/img/Frame 8.png';
+// import Shopping from '../../assets/img/Frame 258.png';
+// import NumberSelector from './Menu_Table'
+// import { Link } from 'react-router-dom'
 
 const Menu1 = () => {
     const navigate = useNavigate();
@@ -60,7 +60,7 @@ const Menu1 = () => {
                                 className={`detail_1 ${selected1 ? 'selected' : ''}`}
                                 onClick={() => setSelected1(!selected1)}
                             >
-                                <p>일본인 인기 No.1 메뉴</p>
+                                <p>덜 맵게 가능</p>
                             </button>
                             <button
                                 className={`detail_2 ${selected2 ? 'selected' : ''}`}
@@ -78,19 +78,19 @@ const Menu1 = () => {
                                     <button className="count_plus" onClick={(e) => { e.preventDefault(); handlePlus(menu.id); }}>+</button>
                                 </div>
                             </div>
-                            <div className="order_list" onClick={(e) => e.preventDefault()}>
-                                <button><img src={Order_list} alt="" /></button>
+                            <div className="order_list" onClick={() => navigate(-1)}>
+                                <button><p>메인으로 돌아가기</p></button>
                             </div>
                         </div>
                     </div>
-                    <div className="shop">
+                    {/* <div className="shop">
                         <button>
                         <NumberSelector /></button>
                     </div>
                     <div className="shopping">
                       <Link to='/cus_order'>
                         <button><img src={Shopping} alt="" /></button></Link>
-                    </div>
+                    </div> */}
                 </div>
             </div>
         </div>

@@ -249,7 +249,7 @@ const Owner_home_fifth = () => {
       const headers = {};
       if (ordersEtagRef.current) headers['If-None-Match'] = ordersEtagRef.current;
 
-      const res = await api.get('/api/orders/current', {
+      const res = await api.get('https://www.taekyeong.shop/api/orders/current', {
         headers,
         signal: controller.signal,
         validateStatus: (s) => (s >= 200 && s < 300) || s === 304,
@@ -288,7 +288,7 @@ const Owner_home_fifth = () => {
     lastRatingAtRef.current = now;
 
     try {
-      const res = await api.get('/api/order-ratings/latest');
+      const res = await api.get('https://www.taekyeong.shop/api/order-ratings/recent?limit=1 주문 평가 조회	/api/order-ratings/recent?limit=1');
       const star = Number(
         res?.data?.star ??
         (Array.isArray(res?.data) ? res.data[0]?.star : undefined) ??
@@ -394,7 +394,7 @@ const Owner_home_fifth = () => {
     if (saved) setStoreName(saved);
 
     // 2) 서버 값으로 최종 동기화 (정확한 값 보장)
-    axios.get(`/api/store/${userId}`)
+    axios.get(`https://www.taekyeong.shop/api/store/${userId}`)
       .then(res => {
         const nm = res?.data?.restaurantName;
         if (nm) {
