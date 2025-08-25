@@ -24,14 +24,16 @@ const MenuEditSection = ({ section, deleteSection }) => (
   </div>
 );
 
-const Menu_Edit = ({ }) => {
+const Menu_Edit = () => {
   const [storeInfo, setStoreInfo] = useState(null);
   const [menuSections, setMenuSections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const userId = '17';
+  // userId를 하드코딩하지 않고, 실제 로그인 정보에서 가져오는 것이 좋습니다.
+  // 예: const userId = localStorage.getItem('userId');
+  const userId = localStorage.getItem('userId');
 
   // 컴포넌트가 로드될 때 가게 정보와 메뉴 목록을 서버에서 가져옵니다.
   useEffect(() => {
@@ -67,22 +69,18 @@ const Menu_Edit = ({ }) => {
   const handleStoreInfoSave = async (updatedInfo) => {
     const API_URL = `/api/store/${userId}/settings/store_info`;
 
-    // API 명세서에 맞게 payload 객체의 키 이름을 수정합니다.
     const payload = {
       restaurantName: updatedInfo.name,
       restaurantAddress: updatedInfo.address,
       shortDescription: updatedInfo.description,
       longDescription: updatedInfo.detail,
-      features: updatedInfo.tags, // 'tags'를 'features'로 변경
+      features: updatedInfo.tags,
     };
 
     try {
-      // 서버로 수정된 payload를 전송합니다.
       const response = await axios.patch(API_URL, payload);
 
       if (response.status === 200) {
-        // 성공 시 화면의 상태를 업데이트합니다.
-        // 서버가 수정한 값을 다시 보내준다면 response.data를 사용하는 것이 더 정확합니다.
         setStoreInfo(updatedInfo);
         localStorage.setItem('restaurantName', updatedInfo.name || '');
         alert('가게 정보가 성공적으로 저장되었습니다.');
@@ -93,8 +91,7 @@ const Menu_Edit = ({ }) => {
     }
   };
 
-  // (deleteSection, addMenuSection 등 다른 함수는 기존과 동일)
-   const deleteSection = async (id) => {
+  const deleteSection = async (id) => {
     if (window.confirm('정말로 이 메뉴를 삭제하시겠습니까?')) {
       try {
         await axios.delete(`/api/store/${userId}/settings/menu_info/id/${id}`);
@@ -109,9 +106,28 @@ const Menu_Edit = ({ }) => {
 
   const addMenuSection = () => navigate('/menu_edit_popup2');
 
+  const handleTranslate = async () => {
+    try {
+      const API_URL = `/api/store/${userId}/settings/menu_info/lang/en`;
+      const payload = {
+        menuList: menuSections,
+      };
+  
+      const response = await axios.post(API_URL, payload);
+  
+      if (response.status === 200) {
+        setMenuSections(response.data.menuList);
+        alert('메뉴가 성공적으로 번역되었습니다.');
+      }
+    } catch (error) {
+      console.error('번역 실패:', error);
+      alert('번역 중 오류가 발생했습니다.');
+    }
+  };
+
+
   if (loading) return <div>로딩 중...</div>;
   if (error) return <div>에러 발생: {error.message}</div>;
-
 
   return (
     <div id="Menu_Edit_Wrap" className="container">
@@ -150,7 +166,7 @@ const Menu_Edit = ({ }) => {
             <MenuEditSection key={section.id} section={section} deleteSection={deleteSection} />
           ))}
           <button className="menu_add" onClick={addMenuSection}>+</button>
-          <button className="tanslation_btn">번역하기</button>
+          <button className="tanslation_btn" onClick={handleTranslate}>번역하기</button>
         </div>
       </main>
     </div>
