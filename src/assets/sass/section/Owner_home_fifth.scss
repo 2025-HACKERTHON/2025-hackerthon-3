@@ -1,0 +1,307 @@
+#ownerhomefifth_wrap {
+    background-color: var(--body);
+    padding-top: 0;
+    padding-bottom: 30px;
+
+
+    .header {
+        position: relative;
+        width: 100%;
+        height: 78px;
+        background-color: var(--header);
+
+        .qr {
+            position: absolute;
+            top: 37px;
+            right: 22px;
+        }
+    }
+
+    .text {
+        align-items: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+
+        h1 {
+            font-size: 16px;
+            color: var(--blue01);
+            margin-top: 15px;
+            font-weight: 600;
+        }
+
+        h2 {
+            font-size: 32px;
+            color: var(--black);
+            margin-top: 10px;
+            font-weight: 600;
+        }
+
+        .on {
+            width: 52px;
+            height: 28px;
+            background-color: var(--blue01);
+            color: var(--body);
+            font-size: 12px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 40px;
+            margin-top: 10px;
+        }
+    }
+
+    .title {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--blue01);
+        margin-top: 27px;
+        padding-left: 21px;
+    }
+
+    .table_list {
+        padding: 0 22px;
+
+        h1 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--blue01);
+            margin-top: 27px;
+        }
+
+        .table {
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-width: 350px;
+            max-width: 377px;
+            width: 100vh;
+            background-color: var(--white);
+            box-shadow: 0 0 7.4px rgba(0, 0, 0, 0.1);
+            border-radius: 14px;
+            padding: 0 19px;
+            min-height: 155px;
+            /* 접혀있을 때 기본 높이 */
+            height: auto;
+            /* 내용만큼 자동 */
+            overflow: visible;
+            transition: height .25s ease, max-height .25s ease;
+
+            .table_left {
+                flex: 1;
+
+                .num {
+                    display: block;
+                    font-size: 20px;
+                    color: var(--black);
+                    margin-bottom: 10px;
+                }
+
+                .menu {
+                    margin-bottom: 10px;
+
+                    p {
+                        font-size: 16px;
+                        font-weight: 500;
+                        color: var(--black);
+                        margin-bottom: 2px;
+                        overflow-wrap: anywhere;
+                        /* 길어도 카드 밖으로 안 나가게 */
+                        white-space: normal;
+                    }
+                }
+
+                .cnum {
+                    font-size: 16px;
+                    font-weight: 500;
+                    color: var(--blue02);
+                }
+            }
+
+            .table_right {
+                .open {
+                    width: 62px;
+                    height: 31px;
+                    background-color: var(--blue01);
+                    display: flex;
+                    align-items: center;
+                    text-align: center;
+                    justify-content: center;
+                    color: var(--white);
+                    border-radius: 40px;
+                    font-size: 16px;
+                    font-weight: 500;
+                    margin-bottom: 50px;
+                }
+
+                .close {
+                    font-size: 16px;
+                    font-weight: 500;
+                    width: 62px;
+                    height: 31px;
+                    background-color: #FF9696;
+                    display: flex;
+                    align-items: center;
+                    text-align: center;
+                    justify-content: center;
+                    color: var(--white);
+                    border-radius: 40px;
+                }
+            }
+
+            /* 기본은 숨김 */
+            .orders_area {
+                display: none;
+                width: 100%;
+                margin-top: 12px;
+                flex: 0 0 100%;
+                /* 아래 줄 전체 차지 */
+            }
+
+            /* 여기! .table 이 열렸을 때만 보이게 */
+            &.is-open {
+                height: auto;
+                max-height: none;
+                padding-top: 16px;
+                flex-wrap: wrap;
+                align-items: flex-start;
+
+                .orders_area {
+                    display: block;
+                }
+            }
+        }
+
+        .order_card {
+            width: 100%;
+            min-height: 117px;
+            background-color: var(--blue03);
+            border-radius: 14px;
+            box-shadow: 0 0 7.4px rgba(0, 0, 0, 0.1);
+            padding: 12px 16px;
+            /* 살짝 여백 */
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            color: var(--blue02);
+
+            .card_title {
+                font-size: 20px;
+                font-weight: 600;
+                line-height: 1.3;
+                overflow-wrap: anywhere;
+            }
+
+            .desc {
+                margin-top: 12px;
+                font-size: 20px;
+                font-weight: 500;
+                line-height: 1.35;
+                overflow-wrap: anywhere;
+            }
+        }
+    }
+
+    .trend_section {
+        padding: 0 22px;
+    }
+
+    .sec_title {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--blue01);
+        margin-bottom: 40px;
+        margin-top: 32px;
+    }
+
+    .rating {
+        width: 317px;
+        height: 239px;
+        background-color: #fff;
+        border-radius: 14px;
+        box-shadow: 0 0 7.4px rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        align-items: center;
+        margin: 0 auto;
+
+        .rating_text {
+            margin-top: 25px;
+            color: var(--blue02);
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .starFilled,
+        .starEmpty {
+            width: 50px;
+            height: 50px;
+        }
+
+        .stars {
+            display: flex;
+            gap: 6px;
+            margin: 12px 0 20px;
+        }
+
+        .rating_detail {
+            font-size: 16px;
+            font-weight: 400;
+            text-align: center;
+            color: var(--blue02);
+            padding: 0 20px;
+            width: 287px;
+            height: 92px;
+            margin: 0 auto;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            white-space: normal;
+            overflow: hidden;
+        }
+    }
+
+    .sub_title {
+        font-size: 20px;
+        color: var(--blue02);
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        text-align: center;
+        justify-content: center;
+        margin: 40px 0 10px;
+    }
+
+    .slider_footer {
+        display: flex;
+        justify-content: center;
+        margin: 27px 0 24px;
+    }
+
+    .dots {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .dot {
+        width: 8px;
+        height: 8px;
+        border: 0;
+        border-radius: 50%;
+        background: #2f3a45;
+        opacity: 0.9;
+        cursor: pointer;
+        box-shadow: 0 0 7.4px rgba(0, 0, 0, 0.1);
+    }
+
+    .dot.active {
+        width: 26px;
+        height: 10px;
+        border-radius: 9999px;
+        background: var(--blue01);
+    }
+}

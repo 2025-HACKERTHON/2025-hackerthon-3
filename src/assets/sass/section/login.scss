@@ -1,0 +1,77 @@
+.Login_wrap{
+    background-image: url("../../img/background\ .png");
+    width: 393px;
+    height: 852px;
+    align-items: center;
+    margin: 0 auto;
+
+    .logo{
+        width: 116px;
+        left: 144px;
+        top: 152px;
+        position: relative;
+    
+    }
+
+    .text{
+        left: 67.75px;
+        top: 180.63px;
+        width: 270px;
+        color: #0C6186;
+        position: relative;
+    }
+
+    .start_button{
+        position: relative;
+        top: 550px;
+    }
+    
+    .input{
+        left: 34px;
+        top: 250px;
+        position: relative;
+    }
+
+    .input_email, .input_password{
+        p{
+            font-size: 16px;
+            color: #333333;
+            margin-bottom: 10px;
+        }
+    }
+    .input_password{
+        margin-top: 27px;
+    }
+    .input input{
+        width: 323px;
+        height: 41px;
+        border: 1px solid #9CA3AF;
+        border-radius: 6.45px;
+        font-size: 12px;
+        padding-left: 15px;
+
+    }
+
+    .start_button{
+        position: relative;
+        top: 300px;
+        text-align: center;
+
+        p{
+            font-size: 16px;
+            color: #626262;
+            font-weight: 100;
+            margin-top: 22px;
+        }
+    }
+
+    .signup_link {
+        color: #0C6186;            
+        text-decoration: none;  
+        font-size: 15px;
+        font-weight: bolder;
+        margin-top: 9px;
+        display: inline-block;
+}
+}
+

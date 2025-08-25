@@ -1,10 +1,9 @@
-.cusorder_wrap {
-    width: 393px;
-    height: 852px;
+#cusorder_wrap {
     padding-top: 0px;
+    padding-bottom: 72px;
 
     .header {
-        width: 392px;
+        width: 100%;
         height: 78px;
         background-color: var(--header);
         display: flex;
@@ -12,7 +11,7 @@
         justify-content: space-between;
         padding: 0px 23px;
         backdrop-filter: blur(32.5px);
-        box-shadow: 0px 1px 16px 0px rgba(0, 0, 0, 0.1);
+        box-shadow: 0px 0px 16px 0px rgba(0, 0, 0, 0.1);
 
         .back_btn {
             width: 9px;
@@ -23,8 +22,8 @@
 
             .qr,
             .trans {
-                width: 22px;
-                height: 22px;
+                width: 30px;
+                height: 30px;
             }
         }
     }
@@ -41,48 +40,85 @@
             margin-bottom: 28px;
         }
 
-        .menu_sec {
-            width: 350px;
-            height: 114px;
-            background-color: var(--white);
-            box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.1);
-            border-radius: 14px;
-            padding: 0px 21px;
+        .menu_section {
+            position: relative;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
+            min-height: 140px;
+            height: auto;
+            padding: 18px 20px;
+            background-color: var(--white);
+            box-shadow: 0 0 7.4px rgba(0, 0, 0, 0.1);
+            border-radius: 14px;
+            margin-bottom: 16px;
 
-            .menu_left {
-                min-width: 0;
-                flex: 1 1 auto;
+            .menu_sec {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 14px;
+                width: 100%;
+                min-height: 100px;
+                margin-top: 0;
 
-                .title {
-                    display: block;
-                    font-size: 20px;
-                    font-weight: 600;
-                    margin-bottom: 8px;
+                .menu_left {
+                    min-width: 0;
+                    flex: 1 1 auto;
+                    .title {
+                        display: block;
+                        font-size: 23px;
+                        font-weight: 600;
+                        margin: 0 0 6px 0;
+                        line-height: 1.2;
+                    }
+
+                    p {
+                        font-size: 15px;
+                        font-weight: 400;
+                        line-height: 1.4;
+                        margin: 0;
+                    }
                 }
 
-                p {
-                    font-size: 16px;
-                    font-weight: 400;
+                .menu_right {
+                    position: absolute;
+                    top: 18px;
+                    right: 14px;
+
+                    white-space: nowrap;
+                    width: 56px;
+                    height: 31px;
+                    flex: 0 0 56px;
+
+                    background-color: var(--blue01);
+                    color: var(--white);
+                    border-radius: 40px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    margin: 0;
+                    /* 기존 -50px 제거 */
+                    box-shadow: 0 4px 4px rgba(0, 0, 0, 0.1);
                 }
             }
 
-            .menu_right {
-                white-space: nowrap;
-                flex: 0 0 56px;
-                width: 56px;
-                height: 31px;
-                background-color: var(--blue01);
-                color: var(--white);
-                border-radius: 40px;
+            /* 버튼은 카드 폭에 맞춰 가득, 높이도 살짝 줄임 */
+            .add_cards {
+                margin-top: 12px;
+                /* 35 → 12 */
+                width: 100%;
+                /* 322px → 카드 너비 꽉 채움 */
+                height: 44px;
+                /* 49 → 44 */
+                border-radius: 8px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                margin-top: -50px;
-                box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.1);
+                font-size: 16px;
+                font-weight: 500;
+                background-color: var(--blue03);
             }
         }
 
@@ -158,7 +194,6 @@
             margin: 0 auto;
             padding: 0 27px;
             margin-bottom: 12px;
-            box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.1);
 
             .how {
                 display: block;
@@ -185,6 +220,9 @@
             justify-content: space-between;
             margin: 0 auto;
             padding: 0 27px;
+            cursor: pointer;
+            /* 클릭 가능한 영역 */
+            user-select: none;
 
             .how {
                 display: block;
@@ -214,6 +252,213 @@
             border-radius: 40px;
             font-size: 24px;
             font-weight: 600;
+        }
+    }
+
+    /* ------------------------- */
+    /* 배경 블러 오버레이        */
+    /* ------------------------- */
+    .card_overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(11, 22, 34, 0.28);
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        animation: overlayFade .15s ease-out;
+    }
+
+    @keyframes overlayFade {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    /* 살짝 팝업 애니메이션 (공용) */
+    @keyframes sheetPop {
+        from {
+            transform: translateY(10px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    /* ------------------------- */
+    /* 주문완료 모달 (너가 준 디자인) */
+    /* ------------------------- */
+    .m_wrap {
+        width: 295px;
+        height: 282px;
+        background-color: #fff;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border-radius: 17px;
+        padding: 12px;
+        box-shadow: 0 18px 40px rgba(0, 0, 0, .14);
+        animation: sheetPop .18s ease-out;
+
+        .md_img {
+            width: 166px;
+            height: 166px;
+            margin-top: -30px;
+            margin-bottom: 8px;
+
+            img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                display: block;
+            }
+        }
+
+        h1 {
+            font-size: 36px;
+            color: var(--blue01);
+            margin: 0 0 6px;
+            line-height: 1.1;
+            text-align: center;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        p {
+            font-size: 20px;
+            margin: 0;
+            color: var(--black);
+            text-align: center;
+        }
+    }
+
+    /* 별점 모달                  */
+    .rating_wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        padding: 0px 10px;
+    }
+
+    .rating_modal {
+        width: 295px;
+        height: 282px;
+        max-width: calc(100% - 64px);
+        background: #fff;
+        border-radius: 18px;
+        padding: 20px 18px 26px;
+        box-shadow: 0 18px 40px rgba(0, 0, 0, .14);
+        text-align: center;
+        animation: sheetPop .18s ease-out;
+        margin-bottom: 20px;
+
+        h3 {
+            margin-top: 10px;
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--blue01);
+            margin-bottom: 52px;
+            letter-spacing: -0.3px;
+        }
+
+        .stars {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 10px;
+            padding: 0px 50px;
+
+            .star {
+                background: transparent;
+                border: 0;
+                padding: 0;
+                cursor: pointer;
+                line-height: 0;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+
+                .star_img {
+                    width: 50px;
+                    height: 50px;
+                    display: block;
+                    user-select: none;
+                    pointer-events: none;
+                    transition: transform .12s ease-out;
+                }
+
+                &:hover .star_img,
+                &:focus-visible .star_img {
+                    transform: scale(1.06);
+                }
+            }
+        }
+
+        .hint {
+            font-size: 20px;
+            color: var(--black);
+            font-weight: 500;
+            margin: 60px 0 0;
+            /* 내부 버튼 제거했으니 하단 여백 최소화 */
+        }
+    }
+
+    /* 모달 박스 바깥의 '평가 완료' 버튼 */
+    .rate_btn_outside {
+        width: 314px;
+        height: 46px;
+        border-radius: 999px;
+        font-weight: 500;
+        font-size: 24px;
+        letter-spacing: -0.3px;
+
+        background: #A6A6A6;
+        /* 비활성 */
+        color: var(--body);
+        box-shadow: none;
+
+        &.active {
+            background: var(--blue01);
+            color: #fff;
+            box-shadow: 0 6px 16px rgba(0, 122, 255, .25);
+        }
+    }
+
+    .thanks {
+        width: 295px;
+        height: 174px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background-color: #fff;
+        border-radius: 17px;
+        text-align: center;
+
+        h1 {
+            font-size: 28px;
+            color: var(--blue01);
+            margin-bottom: 20px;
+            font-weight: 600;
+
+        }
+
+        p {
+            font-size: 20px;
+            color: var(--black);
+            padding: 0 72px;
         }
     }
 }

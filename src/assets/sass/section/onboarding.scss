@@ -1,0 +1,29 @@
+.Onboarding_wrap{
+    background-image: url("../../img/background\ .png");
+    width: 393px;
+    height: 852px;
+    align-items: center;
+    margin: 0 auto;
+
+    .logo{
+        width: 261px;
+        left: 65px;
+        top: 300px;
+        position: relative;
+
+        p{
+            color: #0C6186;
+            font-size: 16px;
+            text-align: center;
+            font-weight: 100;
+            margin-top: 20px;
+        }
+    
+    }
+
+    .start_button{
+        position: relative;
+        left: 95px;
+        top: 550px;
+    }
+}

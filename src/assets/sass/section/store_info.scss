@@ -1,0 +1,190 @@
+.Store_info_wrap{
+    background-image: url("../../img/background\ \(2\).png");
+    width: 393px;
+    align-items: center;
+    margin: 0 auto;
+    height: 960px; 
+    overflow-y: auto;
+
+    .logo{
+        width: 116px;
+        left: 144px;
+        top: 68px;
+        position: relative;
+    
+    }
+
+    .text{
+        left: 54.27px;
+        top: 109.3px;
+        width: 284px;
+        color: #0C6186;
+        position: relative;
+    }
+
+    .start_button{
+        margin-top: -240px;
+        z-index: 10;
+    }
+    
+    .input{
+        left: 34px;
+        top: 150px;
+        position: relative;
+    }
+
+    .input_name, .input_adderess, .input_info, .input_detail{
+        p{
+            font-size: 16px;
+            color: #333333;
+            margin-bottom: 10px;
+        }
+    }
+
+    .input_adderess, .input_info, .input_detail{
+        margin-top: 27px;
+    }
+    .input input{
+        width: 323px;
+        height: 41px;
+        border: 1px solid #9CA3AF;
+        border-radius: 6.45px;
+        font-size: 12px;
+        padding-left: 15px;
+
+    }
+
+    .start_button{
+        position: relative;
+        top: 280px;
+        text-align: center;
+
+        p{
+            font-size: 16px;
+            color: #626262;
+            font-weight: 100;
+            margin-top: 22px;
+        }
+    }
+
+    .login_link {
+        color: #0C6186;            
+        text-decoration: none;  
+        font-size: 15px;
+        font-weight: bolder;
+        margin-top: 9px;
+        display: inline-block;
+    } 
+
+    .table {
+        position: relative;
+        top: 178px;
+        left: 34.9px;
+          
+ 
+         p {
+            font-weight: 600;
+            color: #333333;
+            font-size: 16px;
+            }
+
+                .table_count{
+                margin-top: 7.18px;
+                border: 1px solid #9CA3AF;
+                border-radius: 40px;
+                padding: 2px 20px;
+                width: 61px;
+                height: 29px;
+                text-align: center;
+                background: #FFFFFF;
+                div {
+                    display: flex;
+                    justify-content: center;
+                    gap: 10px;
+                    align-items: center;
+
+                    button {
+                        border: none;
+                        background: none;
+                        font-size: 16px;
+                        color: #333333;
+
+                        &:hover {
+                            color: #0C6186;
+                        }
+                    }
+                }
+            }
+        }
+
+    .detail_box {
+        margin-top: 200px;
+        margin-left: 34.9px;
+        
+            h1{
+                color: #333333;
+                font-size: 16px;
+                margin-bottom: 17px;
+                font-weight: 600;
+            }
+            
+            .detail_top{
+                display: flex;
+            }
+
+            .detail_bottom{
+                display: flex;
+            }
+            button {
+                background-color: #ffffff; 
+                border: 1px solid #0C6186;
+                border-radius: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                height: 22px;
+                width: 90px;
+
+                p {
+                font-size: 10px;
+                font-weight: 400;
+                }
+
+                &:hover {
+                background-color: #5BC0EB;
+                }
+
+                &.selected {
+                background-color: #5BC0EB;
+            
+                }
+            }
+
+            .detail_1 {
+                width: 130px;
+                height: 30px;
+            }
+
+            .detail_2 {
+                width: 89px;
+                height: 30px;
+                margin-left: -35px;
+            }
+
+            .detail_3{
+                height: 30px;
+            }
+
+            .detail_4{
+                margin-left: 5px;
+            }
+            .detail_5{
+                margin-left: 5px;
+            }
+            }
+    
+
+    
+
+}
+
