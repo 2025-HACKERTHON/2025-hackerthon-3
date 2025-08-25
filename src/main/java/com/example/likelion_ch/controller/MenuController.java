@@ -152,7 +152,7 @@ public class MenuController {
     public ResponseEntity<byte[]> getStoreQRCode(@PathVariable Long userId) {
         try {
             // QR코드에 넣을 URL (예: 해당 가게 상세 페이지)
-            String storeUrl = "http://3.38.135.47:8080/api/store/" + userId;
+            String storeUrl = "https://www.taekyeong.shop/api/store/" + userId;
 
             BufferedImage qrImage = QRCodeGenerator.generateQRCodeImage(storeUrl, 250, 250);
 
