@@ -19,8 +19,10 @@ const Menu_Chinese = () => {
 
   // ✅ API 호출
   useEffect(() => {
-    const userId = storedUserId; // 👉 실제 userId로 교체 필요
-    fetch(`http://3.38.135.47:8080/api/store/${userId}/settings/menu_info/lang/ch`)
+
+    const userId = 2; // 👉 실제 userId로 교체 필요
+    fetch(`https://www.taekyeong.shop/api/store/${userId}/settings/menu_info/lang/ch`)
+
       .then(res => {
         if (!res.ok) throw new Error("API 응답 에러: " + res.status);
         return res.json();

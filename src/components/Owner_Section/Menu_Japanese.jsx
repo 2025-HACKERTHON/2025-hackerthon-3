@@ -18,8 +18,10 @@ const Menu_Japanese = () => {
 
   // ✅ API 호출
   useEffect(() => {
-    const userId = 17; // 👉 실제 로그인한 userId로 바꿔주세요
-    fetch(`http://3.38.135.47:8080/api/store/${userId}/settings/menu_info/lang/ja`)
+
+    const userId = 2; // 👉 실제 로그인한 userId로 바꿔주세요
+    fetch(`https://www.taekyeong.shop/api/store/${userId}/settings/menu_info/lang/ja`)
+
       .then(res => res.json())
       .then(data => {
         setRestaurantInfo(data.restaurantInfo);

@@ -28,7 +28,7 @@ const Menu_Edit_Popup1 = ({ storeInfo, handleStoreInfoSave, selectedTags, initia
 
     // 완료 버튼 클릭 시, API를 직접 호출
     const handleSave = async () => {
-        const API_URL = `/api/store/${userId}/settings/store_info`;
+        const API_URL = `https://www.taekyeong.shop/api/store/${userId}/settings/store_info`;
         const payload = {
             restaurantName: info.name,
             restaurantAddress: info.address,

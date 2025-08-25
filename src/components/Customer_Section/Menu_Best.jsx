@@ -33,7 +33,7 @@ const Menu_Best = () => {
         setLoading(true);
         setError(null);
         try {
-      const response = await fetch(`/api/store/${userId}/recommend?lang=${lang}`);
+      const response = await fetch(`https://www.taekyeong.shop/api/store/${userId}/recommend?lang=${lang}`);
       if (!response.ok) {
         throw new Error('API 호출에 실패했습니다.');
       }
@@ -66,7 +66,7 @@ const Menu_Best = () => {
                 try {
                     setLoading(true);
                     
-                    const response = await fetch(`/api/store/${userId}/all`); // <-- /all이 포함되어 있는지 확인
+                    const response = await fetch(`https://www.taekyeong.shop/api/store/${userId}/all`); // <-- /all이 포함되어 있는지 확인
                     if (!response.ok) {
                         throw new Error('API 호출에 실패했습니다.');
                     }
