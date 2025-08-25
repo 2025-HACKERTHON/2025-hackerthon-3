@@ -1,6 +1,6 @@
 // src/components/Owner_Section/Owner_home_first.jsx
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import qr_btn from '../../assets/img/cus_order/qr_btn.svg';
 
@@ -10,7 +10,7 @@ const Owner_home_first = () => {
   const navigate = useNavigate();
 
   const PAGE_SLUGS = ['first', 'second', 'third', 'fourth', 'fifth'];
-  const pathFor = (n) => `/owner_home_${PAGE_SLUGS[(n - 1) % TOTAL_PAGES]}`;
+  const pathFor = (n) => `/owner/owner_home_${PAGE_SLUGS[(n - 1) % TOTAL_PAGES]}`;
   const goNext = () => navigate(pathFor((current % TOTAL_PAGES) + 1));
   const goPrev = () => navigate(pathFor(((current - 2 + TOTAL_PAGES) % TOTAL_PAGES) + 1));
 
@@ -271,7 +271,9 @@ const Owner_home_first = () => {
         headers['If-None-Match'] = etagRef.current;
       }
 
-      const res = await axios.get('https://3.38.135.47:8080/api/orders/current', {
+
+      const res = await axios.get('https://www.taekyeong.shop/api/orders/current', {
+
         params: { userId: 1 },
         withCredentials: true,
         headers,
@@ -331,7 +333,9 @@ const Owner_home_first = () => {
     lastLangAtRef.current = now;
 
     try {
-      const res = await axios.get('https://3.38.135.47:8080/api/statistics/languages', {
+
+      const res = await axios.get('https://www.taekyeong.shop/api/statistics/languages', {
+
         params: { userId: 1 },
         withCredentials: true,
       });
@@ -412,37 +416,37 @@ const Owner_home_first = () => {
   const top3 = langStats[2] || { language: '', percentage: 0 };
 
   // 상단 import/변수들 아래에 추가
-const [storeName, setStoreName] = useState('가게명');
-const userId = 1; // Menu_Edit에서 쓰는 것과 동일하게 맞추세요
+  const [storeName, setStoreName] = useState('가게명');
+  const userId = 1; // Menu_Edit에서 쓰는 것과 동일하게 맞추세요
 
-useEffect(() => {
-  // 1) 로컬 우선 반영 (화면 전환 즉시 보여주기)
-  const saved = localStorage.getItem('restaurantName');
-  if (saved) setStoreName(saved);
+  useEffect(() => {
+    // 1) 로컬 우선 반영 (화면 전환 즉시 보여주기)
+    const saved = localStorage.getItem('restaurantName');
+    if (saved) setStoreName(saved);
 
-  // 2) 서버 값으로 최종 동기화 (정확한 값 보장)
-  axios.get(`https://3.38.135.47:8080/api/store/${userId}`)
-    .then(res => {
-      const nm = res?.data?.restaurantName;
-      if (nm) {
-        setStoreName(nm);
-        // 혹시 로컬에도 최신 반영
-        localStorage.setItem('restaurantName', nm);
-      }
-    })
-    .catch(() => {/* 실패 시 로컬 값 유지 */});
-}, []);
+    // 2) 서버 값으로 최종 동기화 (정확한 값 보장)
+
+    axios.get(`https://www.taekyeong.shop/api/store/${userId}`)
+
+
+      .then(res => {
+        const nm = res?.data?.restaurantName;
+        if (nm) {
+          setStoreName(nm);
+          // 혹시 로컬에도 최신 반영
+          localStorage.setItem('restaurantName', nm);
+        }
+      })
+      .catch(() => {/* 실패 시 로컬 값 유지 */ });
+  }, []);
 
 
   return (
     <div id='ownerhomef_wrap' className='container'>
       <div className="header">
-        <button
-          className="qr"
-          onClick={() => navigate('/menu_edit')}
-        >
+        <Link className='qr' to='/owner/menu_edit'>
           <img src={qr_btn} alt="QR 버튼" />
-        </button>
+        </Link>
       </div>
 
       <div className="text">

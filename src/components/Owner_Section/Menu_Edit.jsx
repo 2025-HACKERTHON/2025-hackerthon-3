@@ -13,7 +13,7 @@ const MenuEditSection = ({ section, deleteSection }) => (
       <p>{section.description || '메뉴 설명을 해주세요. 자세하게 적을수록 손님들이 좋아해요.'}</p>
     </div>
     <div className="btn">
-      <Link to={`/menu_edit_popup2/${section.userMenuId}`} state={{ sectionData: section }}>
+      <Link to={`/owner/menu_edit_popup2/${section.id}`} state={{ sectionData: section }}>
         <div className="edit">
           <button className="edit_btn">편집</button>
         </div>
@@ -70,6 +70,7 @@ const Menu_Edit = () => {
     fetchData();
   }, [userId]);
 
+
   // 2. 메뉴 섹션을 삭제하는 함수
   const deleteSection = async (menuId) => {
     if (window.confirm('정말로 이 메뉴를 삭제하시겠습니까?')) {
@@ -86,6 +87,7 @@ const Menu_Edit = () => {
       }
     }
   };
+
 
   // 3. 가게 정보를 수정하고 저장하는 함수 (팝업 컴포넌트에서 호출될 것으로 예상)
   const handleStoreInfoSave = async (updatedInfo) => {
@@ -111,10 +113,12 @@ const Menu_Edit = () => {
     }
   };
 
+
   // 4. 새로운 메뉴를 추가하기 위해 페이지를 이동하는 함수
   const addMenuSection = () => {
     // ':id'와 같은 파라미터가 아닌, 'new'와 같이 명확한 경로로 보내는 것이 일반적입니다.
     navigate('/menu_edit_popup2/new');
+
   };
 
   // 로딩 및 에러 상태에 따른 UI 처리
@@ -125,7 +129,7 @@ const Menu_Edit = () => {
     <div id="Menu_Edit_Wrap" className="container">
       <header>
         <div className="icon">
-          <Link to='/owner_home_first'>
+          <Link to='/owner/owner_home_first'>
             <img src={back} className="back_icon" alt="뒤로가기" />
           </Link>
           <img src={qr} className="qr_icon" alt="QR 코드" />
@@ -138,7 +142,7 @@ const Menu_Edit = () => {
             <div className="title">MENU EDIT</div>
             <div className="store">
               <h1>{storeInfo.name}</h1>
-              <Link to='/menu_edit_popup1' state={{ initialInfo: storeInfo }}>
+              <Link to='/owner/menu_edit_popup1' state={{ initialInfo: storeInfo }}>
                 <div className="edit_icon">
                   <img src={edit} alt="편집" />
                 </div>
