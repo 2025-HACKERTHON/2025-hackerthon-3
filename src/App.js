@@ -17,6 +17,10 @@ import Menu_Table from './components/Customer_Section/Menu_Table'
 import Cus_options from './components/Customer_Section/Cus_options'
 import Cus_order from './components/Customer_Section/Cus_order'
 import Owner_home_first from './components/Owner_Section/Owner_home_first'
+import Menu_English from './components/Owner_Section/Menu_English'
+import Menu_Japanese from './components/Owner_Section/Menu_Japanese'
+import Menu_Chinese from './components/Owner_Section/Menu_Chinese'
+import Owner_QR from './components/Owner_Section/Owner_QR'
 
 const App = () => {
   return (
@@ -39,6 +43,10 @@ const App = () => {
       <Route path='/cus_order' element={<Cus_order />} />
       <Route path='/cus_options' element={<Cus_options />} />
       <Route path='/owner_home_first' element={<Owner_home_first />} />
+      <Route path='/menu_english' element={<Menu_English />} />
+      <Route path='/menu_japanese' element={<Menu_Japanese />} />
+      <Route path='/menu_chinese' element={<Menu_Chinese />} />
+      <Route path='/owner_qr' element={<Owner_QR />} />
     </Routes>
     </BrowserRouter>
   )

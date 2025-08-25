@@ -3,10 +3,6 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import Menu_Edit from './components/Owner_Section/Menu_Edit';
 import Menu_Edit_Popup1 from './components/Owner_Section/Menu_Edit_Popup1';
 import Menu_Edit_Popup2 from './components/Owner_Section/Menu_Edit_Popup2';
-import Menu_English from './components/Owner_Section/Menu_English'
-import Menu_Japanese from './components/Owner_Section/Menu_Japanese'
-import Menu_Chinese from './components/Owner_Section/Menu_Chinese'
-import Owner_QR from './components/Owner_Section/Owner_QR'
 import Owner_home_second from './components/Owner_Section/Owner_home_second'
 import Owner_home_first from './components/Owner_Section/Owner_home_first'
 import Owner_home_third from './components/Owner_Section/Owner_home_third'
@@ -75,10 +71,6 @@ const deleteMenuSection = (id) => {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path='/menu_english' element={<Menu_English />} />
-        <Route path='/menu_japanese' element={<Menu_Japanese />} />
-        <Route path='/menu_chinese' element={<Menu_Chinese />} />
-        <Route path='/owner_qr' element={<Owner_QR />} />
         <Route path='/owner_home_first' element={<Owner_home_first />} />
         <Route path='/owner_home_second' element={<Owner_home_second />} />
         <Route path='/owner_home_third' element={<Owner_home_third />} />
